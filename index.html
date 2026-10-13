@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+
+        <meta
+            name="viewport"
+            content="width=device-width,
+                 initial-scale=1.0,
+                 viewport-fit=cover"
+        />
+
+        <meta name="theme-color" content="#111827" />
+
+        <title>Mobile UI Framework</title>
+
+        <link rel="stylesheet" href="./style.css" />
+        <link rel="stylesheet" href="./console.css" />
+    </head>
+
+    <body>
+        <div id="productionErrorLog"></div>
+        <div id="consoleLog"></div>
+
+        <div id="app">
+            <header id="app-header">
+                <div class="brand">
+                    <div class="brand-icon">UI</div>
+
+                    <div class="brand-text">
+                        <h1>Mobile UI</h1>
+                        <p>Framework Workspace</p>
+                    </div>
+                </div>
+
+                <div class="renderer-status">
+                    <span class="status-dot"></span>
+                    DOM Renderer
+                </div>
+            </header>
+
+            <main id="main">
+                <section class="workspace">
+                    <div class="workspace-heading">
+                        <div>
+                            <p class="eyebrow">YOUR PROJECT</p>
+                            <h2>Workspace</h2>
+                        </div>
+
+                        <span class="workspace-tag">Development</span>
+                    </div>
+
+                    <div id="workspace-content">
+                        <!-- Workspace content is rendered by main.js. -->
+                    </div>
+                </section>
+            </main>
+
+            <footer id="app-footer">
+                <span>Mobile UI Framework</span>
+                <span id="app-version">Prototype 0.1</span>
+            </footer>
+        </div>
+
+        
+        <!-- Install error listeners first. -->
+        <script src="./debug/mobile-dev-console/errorBootstrap.js"></script>
+
+        <!-- Initialize the console before the application. -->
+        <script type="module">
+            try {
+                const { default: Console } =
+                    await import("./debug/mobile-dev-console/Console.js");
+
+                new Console();
+
+                // Only load the application after capture is installed.
+                await import("./main.js");
+            } catch (error) {
+                if (window.devConsole) {
+                    window.devConsole.error(error);
+                } else {
+                    window.showFatalError("Application Startup Failed", error);
+                }
+            }
+        </script>
+    </body>
+</html>

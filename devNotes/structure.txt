@@ -1,0 +1,78 @@
+
+==============================
+src/ — Shared source code
+
+core/
+Component definitions, state, events, validation, layout model, builder
+
+components/
+Button, Text, Card, Row, Column, Grid, ScrollView
+
+renderers/dom/
+HTML elements, CSS layout, touch and keyboard interaction
+
+renderers/phaser/
+Optional Phaser containers, text, interactive game UI
+
+styles/
+Shared theme tokens, spacing, typography, colors
+
+debug/
+Inspector, layout outlines, live tests
+
+==============================
+app/ — Demo or framework playground
+
+main.js
+app.css
+
+screens/
+The interface used to demonstrate and test the framework
+
+==============================
+public/ — PWA resources
+
+manifest.webmanifest
+service-worker.js
+icons/
+index.html
+
+==============================
+android/ — Android wrapper
+
+app/
+Android manifest, Java/Kotlin WebView host, app icon and configuration
+build.gradle and Gradle wrapper
+
+==============================
+scripts/ — Build helpers
+
+build-web
+
+prepare-android-assets
+Prepare the same web build for the Android package
+
+==============================
+github/workflows/
+deploy-pwa.yml
+build-android.yml
+
+==============================
+Root configuration
+· package.json
+· vite.config.js
+· .gitignore
+· README.md
+
+
+
+
+* `core/` must not depend on the DOM or Phaser. This keeps component definitions and builder portable.
+* DOM is the default renderer. It gives normal scrolling, responsive layouts, text selection, form inputs, and accessibility.
+* Phaser is optional. Load it only in screens or experiences that need game-like rendering.
+* Use one theme system. Shared color, spacing, typography, and sizing tokens help both renderers look consistent.
+* Keep build output generated. Normally, `dist/` and copied Android web assets belong in `.gitignore`; workflows generate them when building.
+* Test both targets. A shared source tree improves compatibility, but WebView and mobile browsers can still differ in storage, caching, input behavior, and permissions.
+Bundle the web assets into the APK. Don't make the Android app depend exclusively on loading GitHub Pages URL.
+
+...start with `core/`, `components/`, and `renderers/dom/`. Establish the PWA build and verify it on an Android phone. Add `android/` as a thin wrapper using that same build, then introduce `renderers/phaser/` when there is a real use case for it. That avoids building two rendering systems before shared component model is stable.
