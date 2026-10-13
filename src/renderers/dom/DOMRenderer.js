@@ -26,7 +26,12 @@ export default class DOMRenderer {
         const tagName =
             type === "button"
                 ? "button"
-                : (props.tagName ?? (type === "card" ? "article" : "div"));
+                : (props.tagName ??
+                  (type === "card"
+                      ? "article"
+                      : type === "text"
+                        ? "p"
+                        : "div"));
 
         const element = document.createElement(tagName);
 
@@ -42,6 +47,41 @@ export default class DOMRenderer {
 
             element.disabled = Boolean(props.disabled);
             element.type = props.type;
+        }
+
+        if (
+            isLayout ||
+            type === "card" ||
+            type === "button" ||
+            type === "text"
+        ) {
+            element.classList.add(`ui-${type}`);
+        }
+
+        if (type === "button") {
+            element.classList.add(
+                `ui-button-${props.variant}`,
+                `ui-button-${props.size}`
+            );
+
+            element.disabled = Boolean(props.disabled);
+            element.type = props.type;
+        }
+
+        if (type === "text") {
+            element.classList.add(`ui-text-${props.size}`);
+
+            if (props.color) {
+                element.style.color = props.color;
+            }
+
+            if (props.weight != null) {
+                element.style.fontWeight = props.weight;
+            }
+
+            if (props.align) {
+                element.style.textAlign = props.align;
+            }
         }
 
         if (props.className) {
@@ -72,7 +112,11 @@ export default class DOMRenderer {
     }
 
     applyLayout(element, props) {
-        const layout = normalizeLayoutProps(props);
+        const layoutProps = element.classList.contains("ui-text")
+            ? { ...props, align: undefined }
+            : props;
+
+        const layout = normalizeLayoutProps(layoutProps);
         const style = element.style;
 
         const alignValues = {
@@ -108,6 +152,10 @@ export default class DOMRenderer {
         // Explicit custom styles override generated layout styles.
         if (props.style) {
             Object.assign(style, props.style);
+        }
+
+        if (props.wrap != null) {
+            element.style.flexWrap = props.wrap === true ? "wrap" : props.wrap;
         }
     }
 

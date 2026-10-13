@@ -399,7 +399,7 @@ button {
     background: var(--color-surface-raised);
 }
 
-/* Sizes */
+/* Button Sizes */
 
 .ui-button-small {
     min-height: 36px;
@@ -420,6 +420,35 @@ button {
     border-radius: 12px;
     font-size: 16px;
 }
+
+
+/* Text component */
+.ui-text {
+    box-sizing: border-box;
+    margin: 0;
+    min-width: 0;
+    color: var(--color-text);
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.ui-text-small {
+    font-size: 0.875rem;
+}
+
+.ui-text-medium {
+    font-size: 1rem;
+}
+
+.ui-text-large {
+    font-size: 1.25rem;
+}
+
+.ui-text-title {
+    font-size: 1.5rem;
+    line-height: 1.25;
+}
+
 
 /* Avoid unexpected shrinking of nested layout content. */
 

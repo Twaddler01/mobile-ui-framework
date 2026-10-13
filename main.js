@@ -1,24 +1,10 @@
-import Component from "./src/core/Component.js";
-import Column from "./src/components/Column.js";
-import Row from "./src/components/Row.js";
-import Card from "./src/components/Card.js";
-import Button from "./src/components/Button.js";
+import { Element, Text, Button, Card, Row, Column } from "./src/ui.js";
+
 import DOMRenderer from "./src/renderers/dom/DOMRenderer.js";
 
 const renderer = new DOMRenderer();
 
 const workspace = document.querySelector("#workspace-content");
-
-function element(tagName, props = {}, children = []) {
-    return new Component(
-        "element",
-        {
-            tagName,
-            ...props
-        },
-        children
-    );
-}
 
 function renderLandingWorkspace() {
     const view = new Column(
@@ -28,18 +14,23 @@ function renderLandingWorkspace() {
             align: "stretch"
         },
         [
-            element("h3", {}, ["Layout test"]),
+            Element(
+                {
+                    tagName: "h3"
+                },
+                ["Button Test"]
+            ),
 
-            new Row(
+            Row(
                 {
                     gap: 12,
                     align: "center",
                     justify: "between"
                 },
                 [
-                    element(
-                        "div",
+                    Element(
                         {
+                            tagName: "div",
                             style: {
                                 background: "#19263b",
                                 padding: "16px",
@@ -50,9 +41,9 @@ function renderLandingWorkspace() {
                         ["First item"]
                     ),
 
-                    element(
-                        "div",
+                    Element(
                         {
+                            tagName: "div",
                             style: {
                                 background: "#19263b",
                                 padding: "16px",
@@ -78,52 +69,51 @@ function renderExample() {
             gap: 12
         },
         [
-            element("h3", {}, ["Button Test"]),
-
-            element("p", {}, [
-                "These buttons use the framework component API."
-            ]),
-
-            new Row(
+            Element(
                 {
-                    gap: 10,
-                    align: "center",
-                    wrap: "wrap"
+                    tagName: "h2"
                 },
-                [
-                    new Button(
-                        {
-                            variant: "primary",
-                            onClick: () => console.log("Primary clicked!")
-                        },
-                        ["Primary"]
-                    ),
-
-                    new Button(
-                        {
-                            variant: "secondary",
-                            onClick: () => console.log("Secondary clicked!")
-                        },
-                        ["Secondary"]
-                    ),
-
-                    new Button(
-                        {
-                            variant: "ghost",
-                            size: "small",
-                            onClick: () => console.log("Ghost clicked!")
-                        },
-                        ["Ghost"]
-                    )
-                ]
+                ["Element Component Test"]
             ),
 
-            new Button(
+            Element(
                 {
-                    variant: "secondary",
-                    disabled: true
+                    tagName: "p",
+                    className: "description",
+                    style: {
+                        color: "var(--color-muted)"
+                    }
                 },
-                ["Disabled"]
+                ["Generic HTML elements can contain text and other components."]
+            ),
+
+            Element(
+                {
+                    tagName: "div",
+                    attributes: {
+                        "data-testid": "element-demo"
+                    },
+                    style: {
+                        padding: "12px",
+                        border: "1px solid var(--color-border)",
+                        borderRadius: "8px"
+                    }
+                },
+                [
+                    Text(
+                        {
+                            weight: 700
+                        },
+                        ["Nested Text component"]
+                    ),
+
+                    Element(
+                        {
+                            tagName: "p"
+                        },
+                        ["Nested generic paragraph."]
+                    )
+                ]
             ),
 
             new Button(
