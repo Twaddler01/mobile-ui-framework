@@ -13,3 +13,6 @@ export const Button = createComponent(ButtonComponent);
 export const Card = createComponent(CardComponent);
 export const Row = createComponent(RowComponent);
 export const Column = createComponent(ColumnComponent);
+
+export { default as normalizeComponent }
+    from "./core/normalizeComponent.js";

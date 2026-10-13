@@ -1,4 +1,5 @@
 import { normalizeLayoutProps } from "../../core/Layout.js";
+import normalizeComponent from "../../core/normalizeComponent.js";
 
 export default class DOMRenderer {
     render(component, container) {
@@ -6,7 +7,8 @@ export default class DOMRenderer {
             throw new TypeError("DOMRenderer requires a valid DOM container.");
         }
 
-        const element = this.createElement(component);
+        const normalized = normalizeComponent(component);
+        const element = this.createElement(normalized);
 
         container.replaceChildren(element);
 
@@ -20,6 +22,16 @@ export default class DOMRenderer {
 
         const props = component.props ?? {};
         const type = component.type;
+
+        if (type === "fragment") {
+            const fragment = document.createDocumentFragment();
+
+            for (const child of component.children ?? []) {
+                fragment.appendChild(this.createElement(child));
+            }
+
+            return fragment;
+        }
 
         const isLayout = type === "column" || type === "row";
 
