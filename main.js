@@ -1,62 +1,146 @@
+import Component from "./src/core/Component.js";
+import Column from "./src/components/Column.js";
+import Row from "./src/components/Row.js";
+import Card from "./src/components/Card.js";
+import Button from "./src/components/Button.js";
+import DOMRenderer from "./src/renderers/dom/DOMRenderer.js";
 
-const workspaceContent = document.querySelector(
-    "#workspace-content"
-);
+const renderer = new DOMRenderer();
+
+const workspace = document.querySelector("#workspace-content");
+
+function element(tagName, props = {}, children = []) {
+    return new Component(
+        "element",
+        {
+            tagName,
+            ...props
+        },
+        children
+    );
+}
 
 function renderLandingWorkspace() {
-    workspaceContent.innerHTML = `
-        <div class="empty-state">
-            <div class="empty-icon" aria-hidden="true">＋</div>
+    const view = new Column(
+        {
+            gap: 16,
+            padding: 20,
+            align: "stretch"
+        },
+        [
+            element("h3", {}, ["Layout test"]),
 
-            <h3>Your workspace is ready</h3>
+            new Row(
+                {
+                    gap: 12,
+                    align: "center",
+                    justify: "between"
+                },
+                [
+                    element(
+                        "div",
+                        {
+                            style: {
+                                background: "#19263b",
+                                padding: "16px",
+                                borderRadius: "10px",
+                                flex: "1"
+                            }
+                        },
+                        ["First item"]
+                    ),
 
-            <p>
-                This is the starting point for your UI framework.
-                Create your first example to test the workspace.
-            </p>
+                    element(
+                        "div",
+                        {
+                            style: {
+                                background: "#19263b",
+                                padding: "16px",
+                                borderRadius: "10px",
+                                flex: "1"
+                            }
+                        },
+                        ["Second item"]
+                    )
+                ]
+            )
+        ]
+    );
 
-            <button
-                id="create-example"
-                class="primary-button"
-                type="button"
-            >
-                Create Example
-            </button>
-        </div>
-    `;
-
-    document
-        .querySelector("#create-example")
-        .addEventListener("click", renderExample);
+    renderer.render(view, workspace);
 }
 
 function renderExample() {
-    workspaceContent.innerHTML = `
-        <article class="example-card">
-            <h3>Hello, workspace!</h3>
+    const view = new Card(
+        {
+            width: "100%",
+            padding: 20,
+            gap: 12
+        },
+        [
+            element("h3", {}, ["Button Test"]),
 
-            <p>
-                Your application is running with plain HTML,
-                CSS, and JavaScript. No Phaser scene is required.
-            </p>
+            element("p", {}, [
+                "These buttons use the framework component API."
+            ]),
 
-            <button
-                id="back-to-workspace"
-                class="primary-button"
-                type="button"
-            >
-                Back to Workspace
-            </button>
-        </article>
-    `;
+            new Row(
+                {
+                    gap: 10,
+                    align: "center",
+                    wrap: "wrap"
+                },
+                [
+                    new Button(
+                        {
+                            variant: "primary",
+                            onClick: () => console.log("Primary clicked!")
+                        },
+                        ["Primary"]
+                    ),
 
-    document
-        .querySelector("#back-to-workspace")
-        .addEventListener("click", renderLandingWorkspace);
+                    new Button(
+                        {
+                            variant: "secondary",
+                            onClick: () => console.log("Secondary clicked!")
+                        },
+                        ["Secondary"]
+                    ),
+
+                    new Button(
+                        {
+                            variant: "ghost",
+                            size: "small",
+                            onClick: () => console.log("Ghost clicked!")
+                        },
+                        ["Ghost"]
+                    )
+                ]
+            ),
+
+            new Button(
+                {
+                    variant: "secondary",
+                    disabled: true
+                },
+                ["Disabled"]
+            ),
+
+            new Button(
+                {
+                    onClick: renderLandingWorkspace
+                },
+                ["Back to Workspace"]
+            )
+        ]
+    );
+
+    renderer.render(view, workspace);
 }
 
 function startApplication() {
-    renderLandingWorkspace();
+    //renderLandingWorkspace();
+    renderExample();
 
     console.log("Mobile UI Framework started.");
 }
