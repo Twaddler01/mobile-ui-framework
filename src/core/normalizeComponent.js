@@ -1,80 +1,43 @@
-const VALID_TYPES = new Set([
-    "element",
-    "text",
-    "button",
-    "card",
-    "row",
-    "column",
-    "fragment"
-]);
+import { COMPONENT_SCHEMAS } from "./componentSchemas.js";
+import validateDefinition from "./validateDefinition.js";
 
-function isPlainObject(value) {
-    if (value === null || typeof value !== "object") {
-        return false;
-    }
-
-    const prototype = Object.getPrototypeOf(value);
-
-    return prototype === Object.prototype || prototype === null;
-}
-
-function normalizeNode(node, path = "root") {
-    // Text and numeric children are allowed.
+function normalizeNode(node) {
     if (typeof node === "string" || typeof node === "number") {
         return node;
     }
 
-    // Arrays become fragments, allowing grouped children.
     if (Array.isArray(node)) {
         return {
             type: "fragment",
             props: {},
-            children: node.map((child, index) =>
-                normalizeNode(child, `${path}[${index}]`)
-            )
+            children: node.map(normalizeNode)
         };
     }
 
-    if (!node || typeof node !== "object") {
-        throw new TypeError(`Invalid component at ${path}.`);
-    }
+    const schema = COMPONENT_SCHEMAS[node.type];
 
-    const type = node.type;
+    const props = {
+        ...schema.defaults,
+        ...node.props
+    };
 
-    if (typeof type !== "string" || !VALID_TYPES.has(type)) {
-        throw new TypeError(`Unknown component type at ${path}: "${type}".`);
-    }
-
-    const props = node.props ?? {};
-    const children = node.children ?? [];
-
-    if (!isPlainObject(props)) {
-        throw new TypeError(
-            `Component props at ${path} must be a plain object.`
-        );
-    }
-
-    if (!Array.isArray(children)) {
-        throw new TypeError(`Component children at ${path} must be an array.`);
-    }
+    const children = (node.children ?? []).map(normalizeNode);
 
     return {
-        type,
-        props: { ...props },
-        children: children.map((child, index) =>
-            normalizeNode(child, `${path}.children[${index}]`)
-        )
+        type: node.type,
+        props,
+        children
     };
 }
 
 export default function normalizeComponent(component) {
-    const normalized = normalizeNode(component);
+    const result = validateDefinition(component);
 
-    if (normalized === null || typeof normalized !== "object") {
+    if (!result.valid) {
         throw new TypeError(
-            "The UI root must be a component or component definition."
+            `UI definition validation failed:\n- ${result.errors.join("\n- ")}`
         );
     }
 
-    return normalized;
+    return normalizeNode(component);
 }

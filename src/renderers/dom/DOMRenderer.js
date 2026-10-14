@@ -167,7 +167,12 @@ export default class DOMRenderer {
         }
 
         if (props.wrap != null) {
-            element.style.flexWrap = props.wrap === true ? "wrap" : props.wrap;
+            element.style.flexWrap =
+                props.wrap === true
+                    ? "wrap"
+                    : props.wrap === false
+                        ? "nowrap"
+                        : props.wrap;
         }
     }
 

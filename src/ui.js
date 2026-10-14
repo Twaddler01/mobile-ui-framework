@@ -14,5 +14,16 @@ export const Card = createComponent(CardComponent);
 export const Row = createComponent(RowComponent);
 export const Column = createComponent(ColumnComponent);
 
+export { default as validateComponent }
+    from "./core/validateComponent.js";
+
+export { default as validateDefinition }
+    from "./core/validateDefinition.js";
+
 export { default as normalizeComponent }
     from "./core/normalizeComponent.js";
+
+export {
+    COMMON_PROPERTIES,
+    COMPONENT_SCHEMAS
+} from "./core/componentSchemas.js";

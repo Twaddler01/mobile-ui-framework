@@ -1,13 +1,21 @@
-import { Element, Text, Button, Card, Row, Column } from "./src/ui.js";
+import {
+    Element,
+    Text,
+    Button,
+    Card,
+    Row,
+    Column,
+    validateDefinition,
+    normalizeComponent
+} from "./src/ui.js";
 
 import DOMRenderer from "./src/renderers/dom/DOMRenderer.js";
 
 const renderer = new DOMRenderer();
-
 const workspace = document.querySelector("#workspace-content");
 
 function renderLandingWorkspace() {
-    const view = new Column(
+    const view = Column(
         {
             gap: 16,
             padding: 20,
@@ -16,9 +24,10 @@ function renderLandingWorkspace() {
         [
             Element(
                 {
-                    tagName: "h3"
+                    tagName: "button",
+                    onClick: renderExample
                 },
-                ["Button Test"]
+                ["renderExample"]
             ),
 
             Row(
@@ -62,7 +71,7 @@ function renderLandingWorkspace() {
 }
 
 function renderExample() {
-    const view = new Card(
+    const view = Card(
         {
             width: "100%",
             padding: 20,
@@ -116,7 +125,7 @@ function renderExample() {
                 ]
             ),
 
-            new Button(
+            Button(
                 {
                     onClick: renderLandingWorkspace
                 },
@@ -129,10 +138,77 @@ function renderExample() {
 }
 
 function startApplication() {
-    //renderLandingWorkspace();
-    renderExample();
+    // renderLandingWorkspace(); // 1.
+    //renderExample(); // 2.
+
+    debugArea1();
 
     console.log("Mobile UI Framework started.");
 }
 
 startApplication();
+
+/// DEBUGGING ////
+
+function debugArea1() {
+    const validView = Column(
+        {
+            padding: 20,
+            gap: 12,
+            align: "stretch"
+        },
+        [
+            Text(
+                {
+                    size: "title",
+                    weight: 700
+                },
+                ["Welcome"]
+            ),
+            Button(
+                {
+                    variant: "primary"
+                },
+                ["Continue"]
+            )
+        ]
+    );
+
+    const result = validateDefinition(validView);
+
+    console.log(result);
+
+    // Expected:
+    // { valid: true, errors: [] }
+
+    if (result.valid) {
+        const normalized = normalizeComponent(validView);
+        renderer.render(normalized, workspace);
+    }
+
+    const invalidView = {
+        type: "column",
+        props: {
+            gap: -10,
+            align: "middle"
+        },
+        children: [
+            {
+                type: "button",
+                props: {
+                    variant: "mystery"
+                },
+                children: ["Test"]
+            },
+            {
+                type: "text",
+                props: {
+                    colour: "red"
+                },
+                children: ["Invalid property"]
+            }
+        ]
+    };
+
+    console.log(validateDefinition(invalidView));
+}
