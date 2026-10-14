@@ -21,8 +21,6 @@ function isValidSize(value) {
 
     const text = value.trim();
 
-    // Leave actual CSS interpretation to the renderer.
-    // Reject empty values and obvious CSS declaration injection.
     return (
         text.length > 0 &&
         !/[;{}]/.test(text) &&
@@ -96,16 +94,20 @@ function validateAttributes(value, errors, path) {
     }
 }
 
-function validateProperty(name, value, schema, errors, path) {
+function validateProperty(name, value, rule, props, errors, path) {
     let valid = true;
 
-    switch (schema.kind) {
+    switch (rule.kind) {
         case "size":
             valid = isValidSize(value);
             break;
 
+        case "number":
+            valid = typeof value === "number" && Number.isFinite(value);
+            break;
+
         case "enum":
-            valid = schema.values.includes(value);
+            valid = rule.values.includes(value);
             break;
 
         case "string":
@@ -130,28 +132,49 @@ function validateProperty(name, value, schema, errors, path) {
 
         case "style":
             validateStyle(value, errors, path);
-            return;
+            break;
 
         case "attributes":
             validateAttributes(value, errors, path);
-            return;
+            break;
 
         default:
             errors.push(
-                `${path}: Unknown schema kind "${schema.kind}" for "${name}".`
+                `${path}: Unknown schema kind "${rule.kind}" for "${name}".`
             );
             return;
     }
 
     if (!valid) {
         errors.push(`${path}: Invalid value for property "${name}".`);
+        return;
+    }
+
+    if (typeof rule.validate === "function") {
+        try {
+            const result = rule.validate(value, props);
+
+            if (result !== true) {
+                const message =
+                    typeof result === "string"
+                        ? result
+                        : (rule.message ??
+                          `Custom validation failed for property "${name}".`);
+
+                errors.push(`${path}: ${message}`);
+            }
+        } catch (error) {
+            errors.push(
+                `${path}: Custom validator for "${name}" threw an error: ${error.message}`
+            );
+        }
     }
 }
 
 export default function validateComponent(type, props = {}, path = "root") {
     const errors = [];
     const componentSchema = getComponentSchema(type);
-    
+
     if (!componentSchema) {
         return [`${path}: Unknown component type "${type}".`];
     }
@@ -165,10 +188,18 @@ export default function validateComponent(type, props = {}, path = "root") {
         ...componentSchema.properties
     };
 
-    for (const [name, value] of Object.entries(props)) {
-        const schema = properties[name];
+    for (const name of componentSchema.required) {
+        if (!Object.hasOwn(props, name) || props[name] === undefined) {
+            errors.push(
+                `${path}: Required property "${name}" is missing for component type "${type}".`
+            );
+        }
+    }
 
-        if (!schema) {
+    for (const [name, value] of Object.entries(props)) {
+        const rule = properties[name];
+
+        if (!rule) {
             errors.push(
                 `${path}: Unsupported property "${name}" for component type "${type}".`
             );
@@ -180,7 +211,7 @@ export default function validateComponent(type, props = {}, path = "root") {
             continue;
         }
 
-        validateProperty(name, value, schema, errors, path);
+        validateProperty(name, value, rule, props, errors, path);
     }
 
     return errors;

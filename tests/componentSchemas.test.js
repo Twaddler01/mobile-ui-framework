@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import validateComponent from "../src/core/validateComponent.js";
 import {
     Column,
     Text,
@@ -139,4 +140,84 @@ test("malformed schema definitions are rejected", () => {
             }),
         /unsupported rule kind/i
     );
+});
+
+test("registered schemas and nested rules are immutable", () => {
+    const schema = getComponentSchema("button");
+
+    assert.ok(Object.isFrozen(schema));
+    assert.ok(Object.isFrozen(schema.properties));
+    assert.ok(Object.isFrozen(schema.properties.variant.values));
+    assert.ok(Object.isFrozen(schema.defaults));
+
+    assert.throws(() => {
+        schema.defaults.variant = "ghost";
+    }, TypeError);
+
+    assert.throws(() => {
+        schema.properties.variant.values.push("danger");
+    }, TypeError);
+});
+
+test("required properties are enforced", () => {
+    registerComponentSchema("test-required-field", {
+        properties: {
+            label: { kind: "string" }
+        },
+        required: ["label"]
+    });
+
+    assert.ok(
+        validateComponent("test-required-field", {}).some(
+            error => error.includes('Required property "label"')
+        )
+    );
+
+    assert.deepEqual(
+        validateComponent("test-required-field", {
+            label: "Continue"
+        }),
+        []
+    );
+});
+
+test("custom validators reject out-of-range numbers", () => {
+    registerComponentSchema("test-progress-meter", {
+        properties: {
+            value: {
+                kind: "number",
+                validate: value =>
+                    value >= 0 && value <= 100
+                        ? true
+                        : "Value must be between 0 and 100."
+            }
+        },
+        required: ["value"]
+    });
+
+    assert.deepEqual(
+        validateComponent("test-progress-meter", {
+            value: 50
+        }),
+        []
+    );
+
+    assert.ok(
+        validateComponent("test-progress-meter", {
+            value: 120
+        }).some(error => error.includes("between 0 and 100"))
+    );
+});
+
+test("invalid custom validators are rejected during registration", () => {
+    assert.throws(() => {
+        registerComponentSchema("test-bad-validator", {
+            properties: {
+                value: {
+                    kind: "number",
+                    validate: "not a function"
+                }
+            }
+        });
+    }, TypeError);
 });
