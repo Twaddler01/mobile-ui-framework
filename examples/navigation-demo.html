@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
+        <meta name="theme-color" content="#10141d" />
+
+        <title>Mobile UI Framework — Navigation Demo</title>
+
+        <style>
+            :root {
+                color-scheme: dark;
+                font-family:
+                    system-ui,
+                    -apple-system,
+                    sans-serif;
+                background: #10141d;
+                color: #f1f5f9;
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            body {
+                margin: 0;
+                min-height: 100dvh;
+                background: #10141d;
+            }
+
+            button {
+                font: inherit;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            .app {
+                display: flex;
+                flex-direction: column;
+                min-height: 100dvh;
+                padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+            }
+
+            .app-header {
+                padding: 20px 22px 16px;
+                border-bottom: 1px solid #283141;
+            }
+
+            .app-brand {
+                margin: 0;
+                font-size: 12px;
+                font-weight: 800;
+                letter-spacing: 0.14em;
+                color: #66e3c4;
+                text-transform: uppercase;
+            }
+
+            .app-subtitle {
+                margin: 5px 0 0;
+                color: #9ca9bb;
+                font-size: 13px;
+            }
+
+            #screen-host {
+                flex: 1;
+                display: flex;
+                min-height: 0;
+                padding: 22px;
+            }
+
+            .demo-screen {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                width: 100%;
+                gap: 16px;
+            }
+
+            .screen-eyebrow {
+                margin: 0;
+                color: #66e3c4;
+                font-size: 12px;
+                font-weight: 700;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+            }
+
+            .screen-title {
+                margin: 0;
+                font-size: clamp(28px, 8vw, 38px);
+                line-height: 1.15;
+                letter-spacing: -0.04em;
+            }
+
+            .screen-description {
+                margin: 0;
+                color: #aab5c5;
+                font-size: 15px;
+                line-height: 1.65;
+            }
+
+            .demo-card {
+                width: 100%;
+                padding: 20px;
+                border: 1px solid #303b4e;
+                border-radius: 18px;
+                background: #191f2b;
+            }
+
+            .demo-card h2 {
+                margin: 0 0 8px;
+                font-size: 17px;
+            }
+
+            .demo-card p {
+                margin: 0;
+                color: #aab5c5;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+
+            .demo-button {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 48px;
+                padding: 12px 18px;
+                border: 0;
+                border-radius: 13px;
+                background: #66e3c4;
+                color: #10201e;
+                font-weight: 750;
+                cursor: pointer;
+            }
+
+            .demo-button:active {
+                transform: scale(0.98);
+            }
+
+            .demo-button:focus-visible,
+            .tab-bar__button:focus-visible {
+                outline: 2px solid #ffffff;
+                outline-offset: 3px;
+            }
+
+            .secondary-button {
+                background: #293446;
+                color: #f1f5f9;
+            }
+
+            .demo-status {
+                color: #9ca9bb;
+                font-size: 13px;
+            }
+
+            #tab-bar-host {
+                position: sticky;
+                bottom: 0;
+                z-index: 10;
+                padding-bottom: 0;
+                border-top: 1px solid #303b4e;
+                background: #171d28;
+            }
+
+            .tab-bar {
+                display: flex;
+                width: 100%;
+                min-height: 76px;
+                padding: 8px 8px 4px;
+                gap: 4px;
+            }
+
+            .tab-bar__button {
+                display: flex;
+                flex: 1;
+                min-width: 0;
+                min-height: 58px;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 4px;
+                border: 0;
+                border-radius: 13px;
+                background: transparent;
+                color: #9ca9bb;
+                cursor: pointer;
+            }
+
+            .tab-bar__button.is-selected {
+                background: #263a3b;
+                color: #66e3c4;
+            }
+
+            .tab-bar__icon {
+                font-size: 21px;
+                line-height: 1;
+            }
+
+            .tab-bar__label {
+                font-size: 11px;
+                font-weight: 650;
+            }
+
+            .app-footer {
+                padding: 10px 16px;
+                border-top: 1px solid #283141;
+                color: #7f8ca0;
+                font-size: 11px;
+                text-align: center;
+            }
+
+            #demo-error {
+                display: none;
+                margin: 16px;
+                padding: 14px;
+                border: 1px solid #a94452;
+                border-radius: 12px;
+                color: #ffb7c0;
+                white-space: pre-wrap;
+                overflow-wrap: anywhere;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="app">
+            <header class="app-header">
+                <p class="app-brand">Mobile UI Framework</p>
+                <p class="app-subtitle">Navigation integration playground</p>
+            </header>
+
+            <main id="screen-host"></main>
+
+            <div id="tab-bar-host"></div>
+
+            <footer class="app-footer">
+                ScreenHost + TabBar + TabNavigator
+            </footer>
+
+            <pre id="demo-error"></pre>
+        </div>
+
+        <script type="module">
+            import {
+                Element,
+                Button,
+                Screen,
+                ScreenRegistry,
+                TabNavigator,
+                ScreenHost,
+                TabBar
+            } from "../src/ui.js";
+
+            const errorBox = document.querySelector("#demo-error");
+
+            function showError(error) {
+                errorBox.style.display = "block";
+                errorBox.textContent = error?.stack ?? String(error);
+                console.error(error);
+            }
+
+            try {
+                let navigator;
+
+                function makeScreen(
+                    eyebrow,
+                    title,
+                    description,
+                    children = []
+                ) {
+                    return Element(
+                        {
+                            tagName: "section",
+                            className: "demo-screen"
+                        },
+                        [
+                            Element(
+                                {
+                                    tagName: "p",
+                                    className: "screen-eyebrow"
+                                },
+                                [eyebrow]
+                            ),
+                            Element(
+                                {
+                                    tagName: "h1",
+                                    className: "screen-title"
+                                },
+                                [title]
+                            ),
+                            Element(
+                                {
+                                    tagName: "p",
+                                    className: "screen-description"
+                                },
+                                [description]
+                            ),
+                            ...children
+                        ]
+                    );
+                }
+
+                function makeCard(title, description) {
+                    return Element(
+                        {
+                            tagName: "article",
+                            className: "demo-card"
+                        },
+                        [
+                            Element({ tagName: "h2" }, [title]),
+                            Element({ tagName: "p" }, [description])
+                        ]
+                    );
+                }
+
+                function makeButton(label, onClick, secondary = false) {
+                    return Button(
+                        {
+                            className: secondary
+                                ? "demo-button secondary-button"
+                                : "demo-button",
+                            onClick
+                        },
+                        [label]
+                    );
+                }
+
+                const registry = new ScreenRegistry({
+                    Home: Screen(() =>
+                        makeScreen(
+                            "Welcome",
+                            "Your home.",
+                            "This screen belongs to the Home tab. Open Details to test stack navigation.",
+                            [
+                                makeCard(
+                                    "Independent screens",
+                                    "The screen area updates independently of the bottom tab bar."
+                                ),
+                                makeButton("Open Details →", () =>
+                                    navigator.navigate("Details")
+                                )
+                            ]
+                        )
+                    ),
+
+                    Details: Screen(() =>
+                        makeScreen(
+                            "Stack navigation",
+                            "Details",
+                            "This screen was pushed onto the Home tab's navigation stack.",
+                            [
+                                makeCard(
+                                    "Try Back",
+                                    "Returning should reveal the Home screen without rebuilding the tab bar."
+                                ),
+                                makeButton(
+                                    "← Back to Home",
+                                    () => navigator.back(),
+                                    true
+                                )
+                            ]
+                        )
+                    ),
+
+                    Search: Screen(() =>
+                        makeScreen(
+                            "Explore",
+                            "Search",
+                            "You are now viewing the Search tab. Switch away and return to test its independent stack.",
+                            [
+                                makeCard(
+                                    "Tab switching",
+                                    "The selected indicator and visible screen should always agree."
+                                ),
+                                makeButton("Open Settings tab →", () =>
+                                    navigator.selectTab("settings")
+                                )
+                            ]
+                        )
+                    ),
+
+                    Settings: Screen(() =>
+                        makeScreen(
+                            "Preferences",
+                            "Settings",
+                            "This is another independent tab.",
+                            [
+                                makeCard(
+                                    "Navigation state",
+                                    "Changing tabs should not remove the tab bar or reset other tabs' stacks."
+                                ),
+                                makeButton(
+                                    "Return to Home tab",
+                                    () => navigator.selectTab("home"),
+                                    true
+                                )
+                            ]
+                        )
+                    )
+                });
+
+                navigator = new TabNavigator(registry, [
+                    {
+                        id: "home",
+                        label: "Home",
+                        icon: "⌂",
+                        screen: "Home"
+                    },
+                    {
+                        id: "search",
+                        label: "Search",
+                        icon: "⌕",
+                        screen: "Search"
+                    },
+                    {
+                        id: "settings",
+                        label: "Settings",
+                        icon: "⚙",
+                        screen: "Settings"
+                    }
+                ]);
+
+                const screenHost = new ScreenHost(navigator);
+                const tabBar = TabBar(navigator);
+
+                screenHost.mount(document.querySelector("#screen-host"));
+
+                tabBar.mount(document.querySelector("#tab-bar-host"));
+
+                // Keep handles available for browser-console testing.
+                window.demo = {
+                    navigator,
+                    screenHost,
+                    tabBar
+                };
+
+                console.info(
+                    "Navigation demo ready.",
+                    "Try demo.navigator.navigate('Details')"
+                );
+            } catch (error) {
+                showError(error);
+            }
+        </script>
+    </body>
+</html>

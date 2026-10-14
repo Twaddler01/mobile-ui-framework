@@ -45,6 +45,6 @@ export {
     ScreenHost
 };
 
-export {
-    isScreenDefinition
-} from "./navigation/Screen.js";
+export { default as TabBar } from "./components/TabBar.js";
+
+export { isScreenDefinition } from "./navigation/Screen.js";
