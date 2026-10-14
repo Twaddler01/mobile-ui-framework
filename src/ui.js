@@ -10,6 +10,9 @@ import ColumnComponent from "./components/Column.js";
 import Screen from "./navigation/Screen.js";
 import ScreenBase from "./navigation/ScreenBase.js";
 import ScreenRegistry from "./navigation/ScreenRegistry.js";
+import ScreenManager from "./navigation/ScreenManager.js";
+import TabNavigator from "./navigation/TabNavigator.js";
+import ScreenHost from "./navigation/ScreenHost.js";
 
 export const Element = createComponent(ElementComponent);
 export const Text = createComponent(TextComponent);
@@ -36,7 +39,10 @@ export {
 export {
     Screen,
     ScreenBase,
-    ScreenRegistry
+    ScreenRegistry,
+    ScreenManager,
+    TabNavigator,
+    ScreenHost
 };
 
 export {
