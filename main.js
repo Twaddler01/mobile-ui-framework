@@ -138,10 +138,10 @@ function renderExample() {
 }
 
 function startApplication() {
-    // renderLandingWorkspace(); // 1.
+    renderLandingWorkspace(); // 1.
     //renderExample(); // 2.
 
-    debugArea1();
+    //debugArea1();
 
     console.log("Mobile UI Framework started.");
 }
@@ -150,6 +150,7 @@ startApplication();
 
 /// DEBUGGING ////
 
+// Test valid / invalid definitiond
 function debugArea1() {
     const validView = Column(
         {
