@@ -1,4 +1,4 @@
-import { COMPONENT_SCHEMAS } from "./componentSchemas.js";
+import { getComponentSchema } from "./componentSchemas.js";
 import validateDefinition from "./validateDefinition.js";
 
 function normalizeNode(node) {
@@ -14,7 +14,13 @@ function normalizeNode(node) {
         };
     }
 
-    const schema = COMPONENT_SCHEMAS[node.type];
+    const schema = getComponentSchema(node.type);
+
+    if (!schema) {
+        throw new TypeError(
+            `Unknown component type "${node.type}".`
+        );
+    }
 
     const props = {
         ...schema.defaults,

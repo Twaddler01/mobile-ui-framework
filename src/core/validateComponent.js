@@ -1,4 +1,4 @@
-import { COMMON_PROPERTIES, COMPONENT_SCHEMAS } from "./componentSchemas.js";
+import { COMMON_PROPERTIES, getComponentSchema } from "./componentSchemas.js";
 
 function isPlainObject(value) {
     if (value === null || typeof value !== "object") {
@@ -150,8 +150,8 @@ function validateProperty(name, value, schema, errors, path) {
 
 export default function validateComponent(type, props = {}, path = "root") {
     const errors = [];
-    const componentSchema = COMPONENT_SCHEMAS[type];
-
+    const componentSchema = getComponentSchema(type);
+    
     if (!componentSchema) {
         return [`${path}: Unknown component type "${type}".`];
     }
