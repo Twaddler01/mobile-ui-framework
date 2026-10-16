@@ -15,7 +15,7 @@
         <title>Mobile UI Framework</title>
 
         <link rel="stylesheet" href="./style.css" />
-        <link rel="stylesheet" href="./console.css" />
+        <link rel="stylesheet" href="../mobile-dev-console/console.css" />
     </head>
 
     <body>
@@ -62,19 +62,26 @@
             </footer>
         </div>
 
-        
         <!-- Install error listeners first. -->
-        <script src="./debug/mobile-dev-console/errorBootstrap.js"></script>
+        <script src="../mobile-dev-console/errorBootstrap.js"></script>
 
-        <!-- Initialize the console before the application. -->
+        <!-- Initialize the console before integrations and the application. -->
         <script type="module">
             try {
-                const { default: Console } =
-                    await import("./debug/mobile-dev-console/Console.js");
+                const { default: Console } = await import("../mobile-dev-console/Console.js");
 
-                new Console();
+                new Console({
+                    captureConsole: true,
+                    mirrorToNative: false,
+                    showCopyButtons: false,
+                    allowDragOutsideBounds: true
+                });
 
-                // Only load the application after capture is installed.
+                // Register example tools after the public console API exists.
+                await import("../mobile-dev-console/DemoDebugSuite.js");
+
+                // Load the app only after console integrations are ready.
+                // Replace TestEnvironment.js with your application entry point as needed.
                 await import("./main.js");
             } catch (error) {
                 if (window.devConsole) {
