@@ -1,0 +1,111 @@
+/* ==========================================
+   ScreenHost + ScreenTransition
+   Opt-in stylesheet. Include it alongside
+   the framework or don't — animations and
+   positioning only take effect if you do.
+   ========================================== */
+
+.screen-host {
+    position: relative;
+    overflow: hidden;
+}
+
+.screen-host__screen {
+    position: absolute;
+    inset: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+.screen-host__screen--current,
+.screen-host__screen--leaving {
+    will-change: transform, opacity;
+}
+
+/* ------------------------------------------
+   Forward — incoming slides in from the right,
+   outgoing parallax-slides to the left.
+   ------------------------------------------ */
+
+@keyframes screen-slide-in-right {
+    from { transform: translateX(100%); }
+    to   { transform: translateX(0); }
+}
+
+@keyframes screen-slide-out-left {
+    from { transform: translateX(0);    opacity: 1; }
+    to   { transform: translateX(-30%); opacity: 0.7; }
+}
+
+.screen-host--forward .screen-host__screen--current {
+    animation: screen-slide-in-right
+        var(--screen-transition-duration, 300ms)
+        cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.screen-host--forward .screen-host__screen--leaving {
+    animation: screen-slide-out-left
+        var(--screen-transition-duration, 300ms)
+        cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+/* ------------------------------------------
+   Backward — mirror of forward.
+   ------------------------------------------ */
+
+@keyframes screen-slide-in-left {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(0); }
+}
+
+@keyframes screen-slide-out-right {
+    from { transform: translateX(0);   opacity: 1; }
+    to   { transform: translateX(30%); opacity: 0.7; }
+}
+
+.screen-host--backward .screen-host__screen--current {
+    animation: screen-slide-in-left
+        var(--screen-transition-duration, 300ms)
+        cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.screen-host--backward .screen-host__screen--leaving {
+    animation: screen-slide-out-right
+        var(--screen-transition-duration, 300ms)
+        cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+/* ------------------------------------------
+   Fade — used for replace, reset, tab switch.
+   ------------------------------------------ */
+
+@keyframes screen-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes screen-fade-out {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+}
+
+.screen-host--fade .screen-host__screen--current {
+    animation: screen-fade-in
+        var(--screen-transition-duration, 300ms)
+        ease-out both;
+}
+
+.screen-host--fade .screen-host__screen--leaving {
+    animation: screen-fade-out
+        var(--screen-transition-duration, 300ms)
+        ease-in both;
+}
+
+/* Reduced motion wins over every direction. */
+@media (prefers-reduced-motion: reduce) {
+    .screen-host__screen {
+        animation: none !important;
+    }
+}

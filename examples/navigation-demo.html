@@ -10,6 +10,9 @@
 
         <title>Mobile UI Framework — Navigation Demo</title>
 
+        <!-- optional css -->
+        <link rel="stylesheet" href="../src/navigation/screen-host.css" />
+
         <style>
             :root {
                 color-scheme: dark;
@@ -67,7 +70,7 @@
                 flex: 1;
                 display: flex;
                 min-height: 0;
-                padding: 22px;
+                /*padding: 22px;*/
             }
 
             .demo-screen {
@@ -76,6 +79,7 @@
                 align-items: flex-start;
                 width: 100%;
                 gap: 16px;
+                padding: 22px;
             }
 
             .screen-eyebrow {
@@ -222,9 +226,11 @@
                 overflow-wrap: anywhere;
             }
         </style>
-                
-        <script type="module" src="../../../mobile-dev-console/console-loader.js"></script>
 
+        <script
+            type="module"
+            src="../../../mobile-dev-console/console-loader.js"
+        ></script>
     </head>
 
     <body>
@@ -367,21 +373,48 @@
                         )
                     ),
 
-                    Search: Screen(() =>
-                        makeScreen(
-                            "Explore",
-                            "Search",
-                            "You are now viewing the Search tab. Switch away and return to test its independent stack.",
-                            [
-                                makeCard(
-                                    "Tab switching",
-                                    "The selected indicator and visible screen should always agree."
-                                ),
-                                makeButton("Open Settings tab →", () =>
-                                    navigator.selectTab("settings")
-                                )
-                            ]
-                        )
+                    Search: Screen(
+                        () => {
+                            const items = [];
+
+                            for (let i = 1; i <= 25; i++) {
+                                items.push(
+                                    makeCard(
+                                        `Item ${i}`,
+                                        "Scroll position should survive leaving and returning."
+                                    )
+                                );
+                            }
+
+                            return makeScreen(
+                                "Scroll demo",
+                                "Long list",
+                                "Scroll down to around item 15, then tap Back. Return to this screen — you should land back at item 15.",
+                                [
+                                    ...items,
+                                    makeButton(
+                                        "← Home tab",
+                                        () => navigator.selectTab("home"),
+                                        true
+                                    )
+                                ]
+                            );
+                        }
+
+                        /*makeScreen(
+                                    "Explore",
+                                    "Search",
+                                    "You are now viewing the Search tab. Switch away and return to test its independent stack.",
+                                    [
+                                        makeCard(
+                                            "Tab switching",
+                                            "The selected indicator and visible screen should always agree."
+                                        ),
+                                        makeButton("Open Settings tab →", () =>
+                                            navigator.selectTab("settings")
+                                        )
+                                    ]
+                                )*/
                     ),
 
                     Settings: Screen(() =>
@@ -425,7 +458,10 @@
                     }
                 ]);
 
-                const screenHost = new ScreenHost(navigator);
+                const screenHost = new ScreenHost(navigator, {
+                    transition: { duration: 200 }
+                });
+
                 const tabBar = TabBar(navigator);
 
                 screenHost.mount(document.querySelector("#screen-host"));
@@ -446,7 +482,6 @@
             } catch (error) {
                 showError(error);
             }
-
         </script>
     </body>
 </html>

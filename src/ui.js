@@ -45,6 +45,8 @@ export {
     ScreenHost
 };
 
+export { default as ScreenTransition } from "./navigation/ScreenTransition.js";
+
 export { default as TabBar } from "./components/TabBar.js";
 
 export { isScreenDefinition } from "./navigation/Screen.js";

@@ -2,16 +2,17 @@ import { normalizeLayoutProps } from "../../core/Layout.js";
 import normalizeComponent from "../../core/normalizeComponent.js";
 
 export default class DOMRenderer {
+    renderToElement(component) {
+        const normalized = normalizeComponent(component);
+        return this.createElement(normalized);
+    }
+    
     render(component, container) {
         if (!(container instanceof Element)) {
             throw new TypeError("DOMRenderer requires a valid DOM container.");
         }
-
-        const normalized = normalizeComponent(component);
-        const element = this.createElement(normalized);
-
+        const element = this.renderToElement(component);
         container.replaceChildren(element);
-
         return element;
     }
 
