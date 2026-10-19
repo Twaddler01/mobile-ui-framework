@@ -46,7 +46,7 @@ export {
 };
 
 export { default as ScreenTransition } from "./navigation/ScreenTransition.js";
-
 export { default as TabBar } from "./components/TabBar.js";
+export { default as HistorySync } from "./navigation/HistorySync.js";
 
 export { isScreenDefinition } from "./navigation/Screen.js";
