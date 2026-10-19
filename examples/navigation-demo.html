@@ -259,10 +259,10 @@
                 ScreenRegistry,
                 TabNavigator,
                 ScreenHost,
-                TabBar
+                TabBar,
+                HistorySync,
+                SwipeNavigation
             } from "../src/ui.js";
-
-            import { HistorySync } from "../src/ui.js";  // ← add to existing import
 
             const errorBox = document.querySelector("#demo-error");
 
@@ -460,6 +460,10 @@
                     }
                 ]);
 
+                const swipeNav = new SwipeNavigation(navigator).mount(
+                    document.querySelector("#screen-host")
+                );
+
                 const screenHost = new ScreenHost(navigator, {
                     transition: { duration: 200 }
                 });
@@ -477,7 +481,9 @@
                 window.demo = {
                     navigator,
                     screenHost,
-                    tabBar
+                    tabBar,
+                    historySync,
+                    swipeNav
                 };
 
                 console.info(
