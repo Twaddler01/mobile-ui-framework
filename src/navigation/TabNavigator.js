@@ -250,6 +250,60 @@ export default class TabNavigator {
         return this.current;
     }
 
+    restore(tabId, entries, { silent = false } = {}) {
+        const tab = this._tabById.get(tabId);
+
+        if (!tab) {
+            throw new Error(`Unknown tab "${tabId}".`);
+        }
+
+        if (!Array.isArray(entries) || entries.length === 0) {
+            throw new TypeError(
+                "restore() requires a non-empty array of entries."
+            );
+        }
+
+        for (const entry of entries) {
+            if (!entry || typeof entry.name !== "string") {
+                throw new TypeError(
+                    "restore() entries require a string 'name' property."
+                );
+            }
+
+            // Pre-flight: throw before mutating any state so a bad entry
+            // can't leave the tab half-restored.
+            this.registry.require(entry.name);
+        }
+
+        const manager = this._managers.get(tabId);
+        const prevId = this._selectedTabId;
+
+        // Suspend the outgoing tab so its stack stops receiving events.
+        if (prevId && prevId !== tabId) {
+            this._managers.get(prevId).suspend();
+        }
+
+        // reset() throws on a suspended manager. resume() is a no-op
+        // when the target is already active.
+        if (manager.isSuspended) {
+            manager.resume();
+        }
+
+        manager.reset(entries[0].name, entries[0].params ?? {});
+
+        for (let i = 1; i < entries.length; i++) {
+            manager.navigate(entries[i].name, entries[i].params ?? {});
+        }
+
+        this._selectedTabId = tabId;
+
+        if (!silent) {
+            this._emit("change", this._createEvent("restore", prevId, tabId));
+        }
+
+        return this.current;
+    }
+
     on(eventName, listener) {
         if (typeof eventName !== "string" || eventName.trim() === "") {
             throw new TypeError("Event name must be a non-empty string.");

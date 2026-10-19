@@ -262,6 +262,8 @@
                 TabBar
             } from "../src/ui.js";
 
+            import { HistorySync } from "../src/ui.js";  // ← add to existing import
+
             const errorBox = document.querySelector("#demo-error");
 
             function showError(error) {
@@ -465,6 +467,9 @@
                 const tabBar = TabBar(navigator);
 
                 screenHost.mount(document.querySelector("#screen-host"));
+
+                const historySync = new HistorySync(navigator, { mode: "hash" });
+                historySync.start();
 
                 tabBar.mount(document.querySelector("#tab-bar-host"));
 

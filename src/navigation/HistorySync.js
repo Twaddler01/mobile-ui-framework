@@ -19,9 +19,12 @@ export default class HistorySync {
         if (
             !navigator ||
             typeof navigator.on !== "function" ||
-            typeof navigator.off !== "function"
+            typeof navigator.off !== "function" ||
+            typeof navigator.restore !== "function"
         ) {
-            throw new TypeError("HistorySync requires a TabNavigator.");
+            throw new TypeError(
+                "HistorySync requires a TabNavigator with restore()."
+            );
         }
 
         if (!isPlainObject(options)) {
@@ -55,7 +58,9 @@ export default class HistorySync {
         this._started = false;
         this._suppress = false;
         this._slugToName = this._buildSlugMap();
+
         this._onChange = event => this._handleChange(event);
+        this._onPopState = event => this._handlePopState(event);
     }
 
     get isStarted() {
@@ -65,8 +70,18 @@ export default class HistorySync {
     start() {
         if (this._started) return this;
 
+        // Restore BEFORE binding the change listener so the restore's
+        // own change event does not trigger a URL write. ScreenHost
+        // is already mounted and will re-render in response.
+        this._restoreOnStart();
+
+        // Attach proper state to the current entry regardless of whether
+        // restore ran. This is what makes refresh-on-deep-link use state
+        // (full fidelity) instead of URL parsing on subsequent loads.
         this._writeState({ replace: true });
+
         this.navigator.on("change", this._onChange);
+        window.addEventListener("popstate", this._onPopState);
         this._started = true;
 
         return this;
@@ -76,6 +91,7 @@ export default class HistorySync {
         if (!this._started) return this;
 
         this.navigator.off("change", this._onChange);
+        window.removeEventListener("popstate", this._onPopState);
         this._started = false;
 
         return this;
@@ -111,6 +127,126 @@ export default class HistorySync {
         // Tab switch replaces so browser Back doesn't ping-pong between tabs.
         const replace = event.action === "selectTab";
         this._writeState({ replace });
+    }
+
+    _handlePopState(event) {
+        this._suppress = true;
+
+        try {
+            const state = event.state;
+
+            if (
+                state?.version === STATE_VERSION &&
+                state.tabId &&
+                Array.isArray(state.stack) &&
+                state.stack.length > 0
+            ) {
+                this.navigator.restore(state.tabId, state.stack);
+                return;
+            }
+
+            const parsed = this._parseLocation();
+
+            if (parsed) {
+                this.navigator.restore(parsed.tabId, parsed.entries);
+            }
+        } catch (error) {
+            console.error("HistorySync: popstate restore failed", error);
+        } finally {
+            this._suppress = false;
+        }
+    }
+
+    _restoreOnStart() {
+        // Prefer history.state — full fidelity, survives reloads.
+        if (history.state?.version === STATE_VERSION) {
+            try {
+                this.navigator.restore(
+                    history.state.tabId,
+                    history.state.stack
+                );
+                return true;
+            } catch (error) {
+                console.error(
+                    "HistorySync: restore from state failed, falling back to URL",
+                    error
+                );
+            }
+        }
+
+        // Fall back to URL parsing — paste, fresh tab, unknown state.
+        const parsed = this._parseLocation();
+
+        if (parsed) {
+            try {
+                this.navigator.restore(parsed.tabId, parsed.entries);
+                return true;
+            } catch (error) {
+                console.error("HistorySync: restore from URL failed", error);
+            }
+        }
+
+        return false;
+    }
+
+    _parseLocation() {
+        let route;
+
+        if (this.mode === "hash") {
+            route = location.hash.slice(1);
+
+            if (!route || !route.startsWith("/")) {
+                return null;
+            }
+        } else {
+            const path = location.pathname;
+
+            if (this.basePath) {
+                if (!path.startsWith(this.basePath)) {
+                    return null;
+                }
+                route = path.slice(this.basePath.length) || "/";
+            } else {
+                route = path;
+            }
+
+            route += location.search;
+        }
+
+        const [pathPart, queryPart = ""] = route.split("?");
+        const segments = pathPart.split("/").filter(Boolean);
+
+        if (segments.length === 0) return null;
+
+        const tabId = this._findTabBySlug(segments[0]);
+        if (!tabId) return null;
+
+        const tab = this.navigator.tabs.find(entry => entry.id === tabId);
+        if (!tab) return null;
+
+        const entries = [{ name: tab.screen, params: {} }];
+
+        for (let i = 1; i < segments.length; i++) {
+            const name = this._slugToName.get(segments[i]);
+
+            if (!name) return null;
+
+            entries.push({ name, params: {} });
+        }
+
+        // Only the top-of-stack params are recoverable from the URL.
+        // Intermediate params are only preserved via history.state.
+        const params = Object.fromEntries(new URLSearchParams(queryPart));
+        entries[entries.length - 1].params = params;
+
+        return { tabId, entries };
+    }
+
+    _findTabBySlug(slug) {
+        for (const tab of this.navigator.tabs) {
+            if (toSlug(tab.id) === slug) return tab.id;
+        }
+        return null;
     }
 
     _writeState({ replace }) {
@@ -150,8 +286,6 @@ export default class HistorySync {
         const rest = stack.slice(1).map(entry => toSlug(entry.name));
         const path = "/" + [tabSlug, ...rest].join("/");
 
-        // Only top-of-stack params go into the URL.
-        // Intermediate params survive via history.state (see _writeState).
         const topParams = stack[stack.length - 1].params ?? {};
         const query = new URLSearchParams(topParams).toString();
 
@@ -160,7 +294,6 @@ export default class HistorySync {
 
     _buildUrl(route) {
         if (this.mode === "hash") {
-            // Preserve the app's physical path and any pre-existing search.
             return `${location.pathname}${location.search}#${route}`;
         }
 
