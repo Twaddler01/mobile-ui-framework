@@ -29,7 +29,6 @@ export default class ScreenManager {
         this.registry = registry;
         this._stack = [];
         this._forward = [];
-        this._listeners = new Map();
 
         this._listeners = new Map();
         this._nextEntryId = 1;
@@ -105,7 +104,7 @@ export default class ScreenManager {
         }
 
         this._stack.push(entry);
-        this._forward = [];
+        this._disposeForwardStack();
 
         try {
             this._activate(entry);
@@ -118,6 +117,13 @@ export default class ScreenManager {
         this._emitNavigation("navigate", previous, entry);
 
         return this.current;
+    }
+
+    _disposeForwardStack() {
+        for (const entry of this._forward) {
+            this._disposeEntry(entry);
+        }
+        this._forward = [];
     }
 
     forward() {
@@ -185,7 +191,7 @@ export default class ScreenManager {
 
         if (!previous) {
             this._stack.push(entry);
-            this._forward = [];
+            this._disposeForwardStack();
 
             try {
                 this._activate(entry);
@@ -202,7 +208,7 @@ export default class ScreenManager {
         this._deactivateForTransition(previous);
         this._stack.pop();
         this._stack.push(entry);
-        this._forward = [];
+        this._disposeForwardStack();
 
         try {
             this._activate(entry);
@@ -232,7 +238,7 @@ export default class ScreenManager {
         }
 
         this._stack = [entry];
-        this._forward = [];
+        this._disposeForwardStack();
 
         try {
             this._activate(entry);

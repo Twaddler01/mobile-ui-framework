@@ -128,8 +128,13 @@ export default class TabNavigator {
 
     get stack() {
         const manager = this._getCurrentManager();
-
         return manager ? manager.stack : Object.freeze([]);
+    }
+
+    get forwardStack() {
+        // ← new
+        const manager = this._getCurrentManager();
+        return manager ? manager.forwardStack : Object.freeze([]);
     }
 
     canGoBack() {
@@ -292,22 +297,22 @@ export default class TabNavigator {
                     "restore() entries require a string 'name' property."
                 );
             }
-
-            // Pre-flight: throw before mutating any state so a bad entry
-            // can't leave the tab half-restored.
             this.registry.require(entry.name);
         }
 
         const manager = this._managers.get(tabId);
         const prevId = this._selectedTabId;
 
-        // Suspend the outgoing tab so its stack stops receiving events.
+        // Capture BEFORE reset()/navigate() clear these.
+        const prevStack = [...manager._stack];
+        const prevForward = [...manager._forward];
+        const prevDepth = prevStack.length;
+        const targetDepth = entries.length;
+
         if (prevId && prevId !== tabId) {
             this._managers.get(prevId).suspend();
         }
 
-        // reset() throws on a suspended manager. resume() is a no-op
-        // when the target is already active.
         if (manager.isSuspended) {
             manager.resume();
         }
@@ -316,6 +321,25 @@ export default class TabNavigator {
 
         for (let i = 1; i < entries.length; i++) {
             manager.navigate(entries[i].name, entries[i].params ?? {});
+        }
+
+        // Rebuild forward stack (reset() and navigate() just cleared it).
+        // `_forward` LIFO: end of array is the next forward target.
+        if (targetDepth < prevDepth) {
+            // Went back — removed stack entries become the new forward top.
+            // Reverse so the shallowest removed entry is popped first.
+            const removed = prevStack.slice(targetDepth).reverse();
+            manager._forward = [...prevForward, ...removed];
+        } else if (targetDepth > prevDepth) {
+            // Went forward — pop the added count from existing forward.
+            const added = targetDepth - prevDepth;
+            manager._forward = prevForward.slice(
+                0,
+                Math.max(0, prevForward.length - added)
+            );
+        } else {
+            // Same depth — preserve existing forward.
+            manager._forward = prevForward;
         }
 
         this._selectedTabId = tabId;

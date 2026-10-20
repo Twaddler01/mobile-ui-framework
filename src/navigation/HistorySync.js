@@ -180,22 +180,14 @@ export default class HistorySync {
     }
 
     _handlePopState(event) {
-        // Only the skip branch updates _lastOp. Browser-initiated pops leave
-        // it intact, so a subsequent app-forward() will prefer replaceState
-        // over history.forward() — safe, at the cost of clobbering a real
-        // forward entry. Precise tracking would need a direction signal
-        // popstate doesn't expose.
-
         if (this._pendingPop) {
-            // Consequence of our own history.back(). The app stack
-            // already matches what the browser just landed on.
             this._pendingPop = false;
             this._lastOp = "pop";
             return;
         }
 
-        // Browser-initiated pop — sync our pointer from the state
-        // the browser just revealed. Unknown states count as "bottom".
+        this._lastOp = "pop"; // ← new
+
         this._historyPointer =
             typeof event.state?._pointer === "number"
                 ? event.state._pointer

@@ -276,32 +276,36 @@ test("class screens are recreated when state is not preserved", () => {
     assert.equal(instances.length, 2);
 });
 
-test("popped class screens are disposed", () => {
-    let disposedCount = 0;
-
-    class DetailsScreen extends ScreenBase {
+test("popped class screens are disposed when forward stack clears", () => {
+    let disposed = 0;
+    class Detail extends ScreenBase {
         render() {
-            return "details";
+            return { type: "element", props: {}, children: ["d"] };
         }
-
         onDispose() {
-            disposedCount++;
+            disposed += 1;
         }
     }
 
-    const manager = createManager({
-        Home: Screen(() => "home"),
-        Details: Screen(DetailsScreen)
+    const registry = new ScreenRegistry({
+        Home: Screen(() => ({
+            type: "element",
+            props: {},
+            children: ["h"]
+        })),
+        Details: Screen(Detail)
     });
 
+    const manager = new ScreenManager(registry);
     manager.navigate("Home");
     manager.navigate("Details");
     manager.back();
 
-    assert.equal(disposedCount, 1);
-    assert.equal(manager.current.name, "Home");
-});
+    assert.equal(disposed, 0, "back() must NOT dispose — forward can revive");
 
+    manager.navigate("Home"); // clears forward stack
+    assert.equal(disposed, 1, "disposed when forward is cleared");
+});
 test("navigation events report actions and current screen", () => {
     const manager = createManager({
         Home: Screen(() => "home"),
@@ -461,31 +465,35 @@ test("reset disposes preserved class screens throughout the stack", () => {
     );
 });
 
-test("back completes navigation even if popped screen disposal fails", () => {
-    class DetailsScreen extends ScreenBase {
+test("navigate() disposes forward entries even if onDispose throws", () => {
+    let attempts = 0;
+    class Detail extends ScreenBase {
         render() {
-            return "details";
+            return { type: "element", props: {}, children: ["d"] };
         }
-
         onDispose() {
+            attempts += 1;
             throw new Error("details disposal failed");
         }
     }
 
-    const manager = createManager({
-        Home: Screen(() => "home"),
-        Details: Screen(DetailsScreen)
+    const registry = new ScreenRegistry({
+        Home: Screen(() => ({
+            type: "element",
+            props: {},
+            children: ["h"]
+        })),
+        Details: Screen(Detail)
     });
 
+    const manager = new ScreenManager(registry);
     manager.navigate("Home");
     manager.navigate("Details");
+    manager.back();
 
-    assert.throws(() => manager.back(), /details disposal failed/);
-
-    // The back transition already happened.
-    assert.equal(manager.stack.length, 1);
-    assert.equal(manager.current.name, "Home");
-    assert.equal(manager.current.active, true);
+    // Forward stack now holds the Details entry.
+    assert.throws(() => manager.navigate("Home"), /details disposal failed/);
+    assert.equal(attempts, 1);
 });
 
 test("reset attempts to dispose every old screen after a disposal error", () => {

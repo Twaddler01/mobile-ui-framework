@@ -64,7 +64,7 @@ function createApp() {
     const screenContainer = document.createElement("main");
     const tabContainer = document.createElement("nav");
 
-    const screenHost = new ScreenHost(navigation);
+    const screenHost = new ScreenHost(navigation, { transition: false });
     const tabBar = TabBar(navigation);
 
     screenHost.mount(screenContainer);

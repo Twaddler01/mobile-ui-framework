@@ -1,5 +1,4 @@
 // src/debug/debugTests.js
-console.log("registerSuite...");
 
 const devConsole = window.devConsole;
 

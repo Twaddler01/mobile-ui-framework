@@ -63,7 +63,7 @@ test("mount renders the current output from a TabNavigator", () => {
         }
     ]);
 
-    const host = new ScreenHost(navigator);
+    const host = new ScreenHost(navigator, { transition: false });
     const container = createContainer();
 
     host.mount(container);
@@ -79,7 +79,7 @@ test("screen changes update the rendered DOM", () => {
     const manager = new ScreenManager(createRegistry());
     manager.navigate("Home");
 
-    const host = new ScreenHost(manager);
+    const host = new ScreenHost(manager, { transition: false });
     const container = createContainer();
 
     host.mount(container);
@@ -118,7 +118,7 @@ test("unmount is safe when called more than once", () => {
     const manager = new ScreenManager(createRegistry());
     manager.navigate("Home");
 
-    const host = new ScreenHost(manager);
+    const host = new ScreenHost(manager, { transition: false });
     const container = createContainer();
 
     host.mount(container);
