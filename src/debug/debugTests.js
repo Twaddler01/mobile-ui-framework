@@ -21,13 +21,13 @@ if (devConsole?.tests?.registerSuite) {
                 description: "screenhosttest",
                 run: () => {
                     const host = document.querySelector("#screen-host");
-                    
+                    // window.demo.navigator.navigate("Details");
+                    // window.demo.navigator.back();
+                        
                     console.log(
-                    host.dataset.canGoBack, // "false"
-                    window.demo.navigator.navigate("Details"),
-                    host.dataset.canGoBack, // "true"
-                    window.demo.navigator.back(),
-                    host.dataset.canGoForward // "true"
+                        host.dataset.canGoBack, // "false"
+                        host.dataset.canGoBack, // "true"
+                        host.dataset.canGoForward // "true"
                     );
                 }
             },

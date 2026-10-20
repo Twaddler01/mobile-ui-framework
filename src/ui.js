@@ -83,4 +83,6 @@ export const Html = Object.freeze({
     hr:      TAG("hr"),
     strong:  TAG("strong"),
     em:      TAG("em"),
+    a:       TAG('a'),
+    img:     TAG('img')
 });

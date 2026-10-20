@@ -52,16 +52,6 @@ export default class DOMRenderer {
             element.classList.add(`ui-${type}`);
         }
 
-        if (type === "button") {
-            element.classList.add(
-                `ui-button-${props.variant}`,
-                `ui-button-${props.size}`
-            );
-
-            element.disabled = Boolean(props.disabled);
-            element.type = props.type;
-        }
-
         if (
             isLayout ||
             type === "card" ||

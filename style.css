@@ -300,20 +300,6 @@ button {
 
 /* Shared layout components */
 
-.ui-layout {
-    display: flex;
-    box-sizing: border-box;
-    min-width: 0;
-}
-
-.ui-column {
-    flex-direction: column;
-}
-
-.ui-row {
-    flex-direction: row;
-}
-
 .ui-column,
 .ui-row {
     display: flex;
