@@ -53,7 +53,7 @@ function createContainer() {
 
 test("TabBar renders the configured tabs", () => {
     const navigator = createNavigator();
-    const tabBar = TabBar(navigator);
+    const tabBar = new TabBar(navigator);
     const container = createContainer();
 
     tabBar.mount(container);
@@ -80,7 +80,7 @@ test("TabBar renders the configured tabs", () => {
 
 test("TabBar marks the selected tab accessibly", () => {
     const navigator = createNavigator();
-    const tabBar = TabBar(navigator);
+    const tabBar = new TabBar(navigator);
     const container = createContainer();
 
     tabBar.mount(container);
@@ -98,7 +98,7 @@ test("TabBar marks the selected tab accessibly", () => {
 });
 
 test("TabBar creates a tab list with accessible labels", () => {
-    const tabBar = TabBar(createNavigator());
+    const tabBar = new TabBar(createNavigator());
     const container = createContainer();
 
     tabBar.mount(container);
@@ -115,7 +115,7 @@ test("TabBar creates a tab list with accessible labels", () => {
 
 test("clicking a tab changes the selected navigation tab", () => {
     const navigator = createNavigator();
-    const tabBar = TabBar(navigator);
+    const tabBar = new TabBar(navigator);
     const container = createContainer();
 
     tabBar.mount(container);
@@ -143,7 +143,7 @@ test("clicking a tab changes the selected navigation tab", () => {
 
 test("TabBar updates when navigation changes programmatically", () => {
     const navigator = createNavigator();
-    const tabBar = TabBar(navigator);
+    const tabBar = new TabBar(navigator);
     const container = createContainer();
 
     tabBar.mount(container);
@@ -168,7 +168,7 @@ test("TabBar updates when navigation changes programmatically", () => {
 });
 
 test("TabBar unmount clears its container", () => {
-    const tabBar = TabBar(createNavigator());
+    const tabBar = new TabBar(createNavigator());
     const container = createContainer();
 
     tabBar.mount(container);
@@ -180,7 +180,7 @@ test("TabBar unmount clears its container", () => {
 });
 
 test("TabBar can be unmounted more than once", () => {
-    const tabBar = TabBar(createNavigator());
+    const tabBar = new TabBar(createNavigator());
     const container = createContainer();
 
     tabBar.mount(container);
@@ -192,13 +192,13 @@ test("TabBar can be unmounted more than once", () => {
 });
 
 test("TabBar rejects invalid containers", () => {
-    const tabBar = TabBar(createNavigator());
+    const tabBar = new TabBar(createNavigator());
 
     assert.throws(() => tabBar.mount({}), /valid DOM container/);
 });
 
 test("TabBar rejects mounting twice without unmounting", () => {
-    const tabBar = TabBar(createNavigator());
+    const tabBar = new TabBar(createNavigator());
 
     tabBar.mount(createContainer());
 

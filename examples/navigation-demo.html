@@ -325,8 +325,10 @@
 
         <script type="module">
             import {
-                Element,
+                Text,
                 Button,
+                Card,
+                Html,
                 Screen,
                 ScreenRegistry,
                 TabNavigator,
@@ -344,180 +346,173 @@
                 console.error(error);
             }
 
+            function mountApp(
+                navigator,
+                {
+                    host,
+                    tabBar,
+                    transition = { duration: 200 },
+                    history = false,
+                    swipe = false,
+                    arrows = null
+                }
+            ) {
+                const hostEl =
+                    typeof host === "string"
+                        ? document.querySelector(host)
+                        : host;
+                if (!hostEl)
+                    throw new Error(`mountApp: no element for "${host}"`);
+
+                // ScreenHost first — otherwise deep-link restores flash the
+                // initial screen before flipping to the restored one.
+                const screenHost = new ScreenHost(navigator, { transition });
+                screenHost.mount(hostEl);
+
+                const swipeInstance = swipe
+                    ? new SwipeNavigation(navigator).mount(hostEl)
+                    : null;
+
+                const tabBarEl = tabBar
+                    ? typeof tabBar === "string"
+                        ? document.querySelector(tabBar)
+                        : tabBar
+                    : null;
+                const tabBarInstance = tabBarEl
+                    ? new TabBar(navigator).mount(tabBarEl)
+                    : null;
+
+                const historyInstance = history
+                    ? new HistorySync(navigator, history).start()
+                    : null;
+
+                if (arrows) {
+                    document
+                        .querySelector(arrows.back)
+                        ?.addEventListener("click", () => navigator.back());
+                    document
+                        .querySelector(arrows.forward)
+                        ?.addEventListener("click", () => navigator.forward());
+                }
+
+                return {
+                    screenHost,
+                    tabBar: tabBarInstance,
+                    swipe: swipeInstance,
+                    history: historyInstance
+                };
+            }
+
             try {
                 let navigator;
 
-                function makeScreen(
-                    eyebrow,
-                    title,
-                    description,
-                    children = []
-                ) {
-                    return Element(
-                        {
-                            tagName: "section",
-                            className: "demo-screen"
-                        },
-                        [
-                            Element(
-                                {
-                                    tagName: "p",
-                                    className: "screen-eyebrow"
-                                },
-                                [eyebrow]
-                            ),
-                            Element(
-                                {
-                                    tagName: "h1",
-                                    className: "screen-title"
-                                },
-                                [title]
-                            ),
-                            Element(
-                                {
-                                    tagName: "p",
-                                    className: "screen-description"
-                                },
-                                [description]
-                            ),
-                            ...children
-                        ]
-                    );
-                }
-
-                function makeCard(title, description) {
-                    return Element(
-                        {
-                            tagName: "article",
-                            className: "demo-card"
-                        },
-                        [
-                            Element({ tagName: "h2" }, [title]),
-                            Element({ tagName: "p" }, [description])
-                        ]
-                    );
-                }
-
-                function makeButton(label, onClick, secondary = false) {
-                    return Button(
-                        {
-                            className: secondary
-                                ? "demo-button secondary-button"
-                                : "demo-button",
-                            onClick
-                        },
-                        [label]
-                    );
-                }
-
                 const registry = new ScreenRegistry({
                     Home: Screen(() =>
-                        makeScreen(
-                            "Welcome",
-                            "Your home.",
-                            "This screen belongs to the Home tab. Open Details to test stack navigation.",
-                            [
-                                makeCard(
-                                    "Independent screens",
+                        Html.section({ className: "demo-screen" }, [
+                            Text("Welcome", { className: "screen-eyebrow" }),
+                            Text("Your home.", {
+                                tagName: "h1",
+                                className: "screen-title"
+                            }),
+                            Text(
+                                "This screen belongs to the Home tab. Open Details to test stack navigation.",
+                                { className: "screen-description" }
+                            ),
+                            Card({
+                                className: "demo-card",
+                                heading: "Independent screens",
+                                description:
                                     "The screen area updates independently of the bottom tab bar."
-                                ),
-                                makeButton("Open Details →", () =>
-                                    navigator.navigate("Details")
-                                )
-                            ]
-                        )
+                            }),
+                            Button("Open Details →", {
+                                className: "demo-button",
+                                onClick: () => navigator.navigate("Details")
+                            })
+                        ])
                     ),
 
                     Details: Screen(() =>
-                        makeScreen(
-                            "Stack navigation",
-                            "Details",
-                            "This screen was pushed onto the Home tab's navigation stack.",
-                            [
-                                makeCard(
-                                    "Try Back",
+                        Html.section({ className: "demo-screen" }, [
+                            Text("Stack navigation", {
+                                className: "screen-eyebrow"
+                            }),
+                            Text("Details", {
+                                tagName: "h1",
+                                className: "screen-title"
+                            }),
+                            Text(
+                                "This screen was pushed onto the Home tab's navigation stack.",
+                                { className: "screen-description" }
+                            ),
+                            Card({
+                                className: "demo-card",
+                                heading: "Try Back",
+                                description:
                                     "Returning should reveal the Home screen without rebuilding the tab bar."
-                                ),
-                                makeButton(
-                                    "← Back to Home",
-                                    () => navigator.back(),
-                                    true
-                                )
-                            ]
-                        )
+                            }),
+                            Button("← Back to Home", {
+                                className: "demo-button secondary-button",
+                                onClick: () => navigator.back()
+                            })
+                        ])
                     ),
 
-                    Search: Screen(
-                        () => {
-                            const items = [];
-
-                            for (let i = 1; i <= 25; i++) {
-                                items.push(
-                                    makeCard(
-                                        `Item ${i}`,
-                                        "Scroll position should survive leaving and returning."
-                                    )
-                                );
-                            }
-
-                            return makeScreen(
-                                "Scroll demo",
-                                "Long list",
+                    Search: Screen(() =>
+                        Html.section({ className: "demo-screen" }, [
+                            Text("Scroll demo", {
+                                className: "screen-eyebrow"
+                            }),
+                            Text("Long list", {
+                                tagName: "h1",
+                                className: "screen-title"
+                            }),
+                            Text(
                                 "Scroll down to around item 15, then tap Back. Return to this screen — you should land back at item 15.",
-                                [
-                                    ...items,
-                                    makeButton(
-                                        "← Home tab",
-                                        () => navigator.selectTab("home"),
-                                        true
-                                    )
-                                ]
-                            );
-                        }
-
-                        /*makeScreen(
-                                    "Explore",
-                                    "Search",
-                                    "You are now viewing the Search tab. Switch away and return to test its independent stack.",
-                                    [
-                                        makeCard(
-                                            "Tab switching",
-                                            "The selected indicator and visible screen should always agree."
-                                        ),
-                                        makeButton("Open Settings tab →", () =>
-                                            navigator.selectTab("settings")
-                                        )
-                                    ]
-                                )*/
+                                { className: "screen-description" }
+                            ),
+                            ...Array.from({ length: 25 }, (_, i) =>
+                                Card({
+                                    className: "demo-card",
+                                    heading: `Item ${i + 1}`,
+                                    description:
+                                        "Scroll position should survive leaving and returning."
+                                })
+                            ),
+                            Button("← Home tab", {
+                                className: "demo-button secondary-button",
+                                onClick: () => navigator.selectTab("home")
+                            })
+                        ])
                     ),
 
                     Settings: Screen(() =>
-                        makeScreen(
-                            "Preferences",
-                            "Settings",
-                            "This is another independent tab.",
-                            [
-                                makeCard(
-                                    "Navigation state",
+                        Html.section({ className: "demo-screen" }, [
+                            Text("Preferences", {
+                                className: "screen-eyebrow"
+                            }),
+                            Text("Settings", {
+                                tagName: "h1",
+                                className: "screen-title"
+                            }),
+                            Text("This is another independent tab.", {
+                                className: "screen-description"
+                            }),
+                            Card({
+                                className: "demo-card",
+                                heading: "Navigation state",
+                                description:
                                     "Changing tabs should not remove the tab bar or reset other tabs' stacks."
-                                ),
-                                makeButton(
-                                    "Return to Home tab",
-                                    () => navigator.selectTab("home"),
-                                    true
-                                )
-                            ]
-                        )
+                            }),
+                            Button("Return to Home tab", {
+                                className: "demo-button secondary-button",
+                                onClick: () => navigator.selectTab("home")
+                            })
+                        ])
                     )
                 });
 
                 navigator = new TabNavigator(registry, [
-                    {
-                        id: "home",
-                        label: "Home",
-                        icon: "⌂",
-                        screen: "Home"
-                    },
+                    { id: "home", label: "Home", icon: "⌂", screen: "Home" },
                     {
                         id: "search",
                         label: "Search",
@@ -532,41 +527,19 @@
                     }
                 ]);
 
-                document
-                    .querySelector(".nav-back")
-                    .addEventListener("click", () => navigator.back());
-
-                document
-                    .querySelector(".nav-forward")
-                    .addEventListener("click", () => navigator.forward());
-
-                const swipeNav = new SwipeNavigation(navigator).mount(
-                    document.querySelector("#screen-host")
-                );
-
-                const screenHost = new ScreenHost(navigator, {
-                    transition: { duration: 200 }
+                const app = mountApp(navigator, {
+                    host: "#screen-host",
+                    tabBar: "#tab-bar-host",
+                    transition: { duration: 200 },
+                    history: { mode: "hash" },
+                    swipe: true,
+                    arrows: {
+                        back: ".nav-back",
+                        forward: ".nav-forward"
+                    }
                 });
 
-                const tabBar = TabBar(navigator);
-
-                screenHost.mount(document.querySelector("#screen-host"));
-
-                const historySync = new HistorySync(navigator, {
-                    mode: "hash"
-                });
-                historySync.start();
-
-                tabBar.mount(document.querySelector("#tab-bar-host"));
-
-                // Keep handles available for browser-console testing.
-                window.demo = {
-                    navigator,
-                    screenHost,
-                    tabBar,
-                    historySync,
-                    swipeNav
-                };
+                window.demo = { navigator, ...app };
 
                 console.info(
                     "Navigation demo ready.",

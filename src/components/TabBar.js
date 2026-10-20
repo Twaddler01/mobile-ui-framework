@@ -1,62 +1,45 @@
-export default function TabBar(navigation) {
-    if (
-        !navigation ||
-        typeof navigation.selectTab !== "function" ||
-        typeof navigation.on !== "function" ||
-        typeof navigation.off !== "function"
-    ) {
-        throw new TypeError("TabBar requires a TabNavigator.");
-    }
-
-    let container = null;
-    let tabList = null;
-
-    const buttons = new Map();
-
-    function updateSelection() {
-        if (!container) {
-            return;
+export default class TabBar {
+    constructor(navigation) {
+        if (
+            !navigation ||
+            typeof navigation.selectTab !== "function" ||
+            typeof navigation.on !== "function" ||
+            typeof navigation.off !== "function"
+        ) {
+            throw new TypeError("TabBar requires a TabNavigator.");
         }
 
-        const selectedTabId = navigation.selectedTabId;
-
-        for (const [id, button] of buttons) {
-            const selected = id === selectedTabId;
-
-            button.setAttribute("aria-selected", String(selected));
-
-            button.classList.toggle("is-selected", selected);
-
-            button.tabIndex = selected ? 0 : -1;
-        }
+        this.navigation = navigation;
+        this.container = null;
+        this.tabList = null;
+        this.buttons = new Map();
+        this._listener = () => this._updateSelection();
     }
 
-    function handleNavigationChange() {
-        updateSelection();
+    get isMounted() {
+        return this.container !== null;
     }
 
-    function handleTabClick(id) {
-        navigation.selectTab(id);
-        updateSelection();
+    get element() {
+        return this.tabList;
     }
 
-    function mount(target) {
+    mount(target) {
         if (!(target instanceof Element)) {
             throw new TypeError("TabBar requires a valid DOM container.");
         }
 
-        if (container) {
+        if (this.container) {
             throw new Error("TabBar is already mounted. Unmount it first.");
         }
 
-        const tabs = navigation.tabs;
+        const tabs = this.navigation.tabs;
 
         if (!Array.isArray(tabs) || tabs.length === 0) {
             throw new Error("TabBar requires at least one configured tab.");
         }
 
         const nav = document.createElement("div");
-
         nav.className = "tab-bar";
         nav.setAttribute("role", "tablist");
         nav.setAttribute("aria-label", "Main navigation");
@@ -65,7 +48,6 @@ export default function TabBar(navigation) {
 
         for (const tab of tabs) {
             const button = document.createElement("button");
-
             button.type = "button";
             button.className = "tab-bar__button";
             button.setAttribute("role", "tab");
@@ -76,74 +58,74 @@ export default function TabBar(navigation) {
 
             if (tab.icon) {
                 const icon = document.createElement("span");
-
                 icon.className = "tab-bar__icon";
                 icon.setAttribute("aria-hidden", "true");
                 icon.textContent = tab.icon;
-
                 button.appendChild(icon);
             }
 
             const label = document.createElement("span");
-
             label.className = "tab-bar__label";
             label.textContent = tab.label;
-
             button.appendChild(label);
 
-            button.addEventListener("click", () => {
-                handleTabClick(tab.id);
-            });
+            button.addEventListener("click", () =>
+                this._handleTabClick(tab.id)
+            );
 
             nextButtons.set(tab.id, button);
             nav.appendChild(button);
         }
 
-        // Prepare the DOM before subscribing, so a failed
-        // initial render cannot leave an orphaned listener.
         target.replaceChildren(nav);
 
-        container = target;
-        tabList = nav;
+        this.container = target;
+        this.tabList = nav;
 
         for (const [id, button] of nextButtons) {
-            buttons.set(id, button);
+            this.buttons.set(id, button);
         }
 
-        navigation.on("change", handleNavigationChange);
-        updateSelection();
+        this.navigation.on("change", this._listener);
+        this._updateSelection();
 
-        return api;
+        return this;
     }
 
-    function unmount() {
-        if (!container) {
-            return api;
+    unmount() {
+        if (!this.container) {
+            return this;
         }
 
-        navigation.off("change", handleNavigationChange);
+        this.navigation.off("change", this._listener);
 
-        container.replaceChildren();
+        this.container.replaceChildren();
 
-        container = null;
-        tabList = null;
-        buttons.clear();
+        this.container = null;
+        this.tabList = null;
+        this.buttons.clear();
 
-        return api;
+        return this;
     }
 
-    const api = {
-        mount,
-        unmount,
-
-        get isMounted() {
-            return container !== null;
-        },
-
-        get element() {
-            return tabList;
+    _updateSelection() {
+        if (!this.container) {
+            return;
         }
-    };
 
-    return api;
+        const selectedTabId = this.navigation.selectedTabId;
+
+        for (const [id, button] of this.buttons) {
+            const selected = id === selectedTabId;
+
+            button.setAttribute("aria-selected", String(selected));
+            button.classList.toggle("is-selected", selected);
+            button.tabIndex = selected ? 0 : -1;
+        }
+    }
+
+    _handleTabClick(id) {
+        this.navigation.selectTab(id);
+        this._updateSelection();
+    }
 }

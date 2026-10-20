@@ -314,6 +314,11 @@ button {
     flex-direction: row;
 }
 
+.ui-column,
+.ui-row {
+    display: flex;
+}
+
 .ui-card {
     display: flex;
     flex-direction: column;

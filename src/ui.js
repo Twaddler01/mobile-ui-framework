@@ -19,10 +19,10 @@ import ScreenHost from "./navigation/ScreenHost.js";
 
 // Public component API
 export const Element = createComponent(ElementComponent);
-export const Text = createComponent(TextComponent);
-export const Button = createComponent(ButtonComponent);
-export const Card = createComponent(CardComponent);
-export const Row = createComponent(RowComponent);
+export const Text   = createComponent(TextComponent,   { contentFirst: true });
+export const Button = createComponent(ButtonComponent, { contentFirst: true });
+export const Card   = createComponent(CardComponent);
+export const Row    = createComponent(RowComponent);
 export const Column = createComponent(ColumnComponent);
 
 // Public core API
@@ -56,3 +56,31 @@ export { default as HistorySync } from "./navigation/HistorySync.js";
 export { default as SwipeNavigation } from "./navigation/SwipeNavigation.js";
 
 export { isScreenDefinition } from "./navigation/Screen.js";
+
+const TAG = (tagName) => (props = {}, children = []) =>
+    new ElementComponent({ tagName, ...props }, children);
+
+export const Html = Object.freeze({
+    div:     TAG("div"),
+    span:    TAG("span"),
+    section: TAG("section"),
+    article: TAG("article"),
+    header:  TAG("header"),
+    footer:  TAG("footer"),
+    nav:     TAG("nav"),
+    main:    TAG("main"),
+    aside:   TAG("aside"),
+    p:       TAG("p"),
+    h1:      TAG("h1"),
+    h2:      TAG("h2"),
+    h3:      TAG("h3"),
+    h4:      TAG("h4"),
+    ul:      TAG("ul"),
+    ol:      TAG("ol"),
+    li:      TAG("li"),
+    a:       TAG("a"),
+    img:     TAG("img"),
+    hr:      TAG("hr"),
+    strong:  TAG("strong"),
+    em:      TAG("em"),
+});
