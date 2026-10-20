@@ -134,8 +134,13 @@ export default class TabNavigator {
 
     canGoBack() {
         const manager = this._getCurrentManager();
-
         return manager ? manager.canGoBack() : false;
+    }
+
+    canGoForward() {
+        // ← new
+        const manager = this._getCurrentManager();
+        return manager ? manager.canGoForward() : false;
     }
 
     selectTab(id, params = {}) {
@@ -209,6 +214,20 @@ export default class TabNavigator {
     back() {
         const manager = this._requireCurrentManager();
         const result = manager.back();
+        if (result === false) return false;
+
+        this._emit(
+            "change",
+            this._createEvent("back", this._selectedTabId, this._selectedTabId)
+        );
+
+        return this.current;
+    }
+
+    forward() {
+        // ← new
+        const manager = this._requireCurrentManager();
+        const result = manager.forward();
 
         if (result === false) {
             return false;
@@ -216,7 +235,11 @@ export default class TabNavigator {
 
         this._emit(
             "change",
-            this._createEvent("back", this._selectedTabId, this._selectedTabId)
+            this._createEvent(
+                "forward",
+                this._selectedTabId,
+                this._selectedTabId
+            )
         );
 
         return this.current;
@@ -353,10 +376,14 @@ export default class TabNavigator {
     }
 
     _createEvent(action, previousTabId, tabId) {
+        const manager = this._getCurrentManager();
+
         return Object.freeze({
             action,
             previousTabId,
             tabId,
+            canGoBack: manager ? manager.canGoBack() : false,
+            canGoForward: manager ? manager.canGoForward() : false,
             current: this.current,
             tabs: this.tabs,
             stack: this.stack

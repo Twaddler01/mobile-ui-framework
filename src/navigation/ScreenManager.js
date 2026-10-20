@@ -28,6 +28,9 @@ export default class ScreenManager {
 
         this.registry = registry;
         this._stack = [];
+        this._forward = [];
+        this._listeners = new Map();
+
         this._listeners = new Map();
         this._nextEntryId = 1;
         this._suspended = false;
@@ -47,6 +50,16 @@ export default class ScreenManager {
 
     canGoBack() {
         return this._stack.length > 1;
+    }
+
+    canGoForward() {
+        return this._forward.length > 0;
+    }
+
+    get forwardStack() {
+        return Object.freeze(
+            this._forward.map(entry => this._createSnapshot(entry))
+        );
     }
 
     on(eventName, listener) {
@@ -83,7 +96,7 @@ export default class ScreenManager {
 
     navigate(name, params = {}) {
         this._assertAvailable();
-        
+
         const entry = this._createEntry(name, params);
         const previous = this._getCurrentEntry();
 
@@ -92,16 +105,13 @@ export default class ScreenManager {
         }
 
         this._stack.push(entry);
+        this._forward = [];
 
         try {
             this._activate(entry);
         } catch (error) {
             this._stack.pop();
-
-            if (previous) {
-                this._activate(previous);
-            }
-
+            if (previous) this._activate(previous);
             throw error;
         }
 
@@ -110,9 +120,38 @@ export default class ScreenManager {
         return this.current;
     }
 
+    forward() {
+        this._assertAvailable();
+
+        if (!this.canGoForward()) {
+            return false;
+        }
+
+        const leaving = this._getCurrentEntry();
+        const next = this._forward[this._forward.length - 1];
+
+        this._deactivateForTransition(leaving);
+        this._forward.pop();
+
+        this._stack.push(next);
+
+        try {
+            this._activate(next);
+        } catch (error) {
+            this._stack.pop();
+            this._forward.push(next);
+            this._activate(leaving);
+            throw error;
+        }
+
+        this._emitNavigation("forward", leaving, next);
+
+        return this.current;
+    }
+
     back() {
         this._assertAvailable();
-        
+
         if (!this.canGoBack()) {
             return false;
         }
@@ -128,11 +167,10 @@ export default class ScreenManager {
         } catch (error) {
             this._stack.push(leaving);
             this._activate(leaving);
-
             throw error;
         }
 
-        this._disposeEntry(leaving);
+        this._forward.push(leaving); // ← new — only after activation succeeds
 
         this._emitNavigation("back", leaving, previous);
 
@@ -141,12 +179,13 @@ export default class ScreenManager {
 
     replace(name, params = {}) {
         this._assertAvailable();
-        
+
         const entry = this._createEntry(name, params);
         const previous = this._getCurrentEntry();
 
         if (!previous) {
             this._stack.push(entry);
+            this._forward = [];
 
             try {
                 this._activate(entry);
@@ -163,6 +202,7 @@ export default class ScreenManager {
         this._deactivateForTransition(previous);
         this._stack.pop();
         this._stack.push(entry);
+        this._forward = [];
 
         try {
             this._activate(entry);
@@ -182,7 +222,7 @@ export default class ScreenManager {
 
     reset(name, params = {}) {
         this._assertAvailable();
-        
+
         const entry = this._createEntry(name, params);
         const previousStack = [...this._stack];
         const previous = this._getCurrentEntry();
@@ -192,6 +232,7 @@ export default class ScreenManager {
         }
 
         this._stack = [entry];
+        this._forward = [];
 
         try {
             this._activate(entry);

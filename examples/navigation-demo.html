@@ -215,6 +215,61 @@
                 text-align: center;
             }
 
+            .app-header {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 20px 22px 16px;
+                border-bottom: 1px solid #283141;
+            }
+
+            .app-header__center {
+                flex: 1;
+                min-width: 0;
+                text-align: center;
+            }
+
+            .nav-arrow {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+
+                width: 40px;
+                height: 40px;
+                flex-shrink: 0;
+
+                border: 1px solid #303b4e;
+                border-radius: 10px;
+                background: #191f2b;
+                color: #f1f5f9;
+
+                font-size: 20px;
+                line-height: 1;
+                cursor: pointer;
+
+                /* Hidden until the attribute flips it visible.
+       visibility, not display, keeps the header layout stable
+       and removes pointer interaction in one property. */
+                visibility: hidden;
+            }
+
+            .nav-arrow:active {
+                transform: scale(0.96);
+            }
+
+            .nav-arrow:focus-visible {
+                outline: 2px solid #ffffff;
+                outline-offset: 3px;
+            }
+
+            /* :has() reaches from the header's parent to the attribute
+   that ScreenHost sets on #screen-host. Supported in all
+   modern browsers (Firefox 121+, Safari 15.4+, Chrome 105+). */
+            .app:has(#screen-host[data-can-go-back="true"]) .nav-back,
+            .app:has(#screen-host[data-can-go-forward="true"]) .nav-forward {
+                visibility: visible;
+            }
+
             #demo-error {
                 display: none;
                 margin: 16px;
@@ -227,17 +282,34 @@
             }
         </style>
 
-        <script
-            type="module"
-            src="../../../mobile-dev-console/console-loader.js"
-        ></script>
+        <script type="module" src="../src/debug/console-loader.js"></script>
     </head>
 
     <body>
         <div class="app">
             <header class="app-header">
-                <p class="app-brand">Mobile UI Framework</p>
-                <p class="app-subtitle">Navigation integration playground</p>
+                <button
+                    class="nav-arrow nav-back"
+                    type="button"
+                    aria-label="Back"
+                >
+                    <span aria-hidden="true">←</span>
+                </button>
+
+                <div class="app-header__center">
+                    <p class="app-brand">Mobile UI Framework</p>
+                    <p class="app-subtitle">
+                        Navigation integration playground
+                    </p>
+                </div>
+
+                <button
+                    class="nav-arrow nav-forward"
+                    type="button"
+                    aria-label="Forward"
+                >
+                    <span aria-hidden="true">→</span>
+                </button>
             </header>
 
             <main id="screen-host"></main>
@@ -460,6 +532,14 @@
                     }
                 ]);
 
+                document
+                    .querySelector(".nav-back")
+                    .addEventListener("click", () => navigator.back());
+
+                document
+                    .querySelector(".nav-forward")
+                    .addEventListener("click", () => navigator.forward());
+
                 const swipeNav = new SwipeNavigation(navigator).mount(
                     document.querySelector("#screen-host")
                 );
@@ -472,7 +552,9 @@
 
                 screenHost.mount(document.querySelector("#screen-host"));
 
-                const historySync = new HistorySync(navigator, { mode: "hash" });
+                const historySync = new HistorySync(navigator, {
+                    mode: "hash"
+                });
                 historySync.start();
 
                 tabBar.mount(document.querySelector("#tab-bar-host"));

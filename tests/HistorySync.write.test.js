@@ -164,6 +164,7 @@ function runWriteSuite(mode, initialUrl) {
 
             assert.deepEqual(history.state, {
                 version: 1,
+                _pointer: 1,
                 tabId: "home",
                 stack: [
                     { name: "Home", params: {} },

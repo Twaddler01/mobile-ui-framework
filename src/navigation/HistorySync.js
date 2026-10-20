@@ -38,7 +38,6 @@ export default class HistorySync {
         }
 
         const mode = options.mode ?? "hash";
-
         if (!VALID_MODES.includes(mode)) {
             throw new TypeError(
                 `HistorySync mode must be one of: ${VALID_MODES.join(", ")}.`
@@ -46,7 +45,6 @@ export default class HistorySync {
         }
 
         const basePath = options.basePath ?? "";
-
         if (typeof basePath !== "string") {
             throw new TypeError("HistorySync basePath must be a string.");
         }
@@ -57,7 +55,10 @@ export default class HistorySync {
 
         this._started = false;
         this._suppress = false;
+        this._pendingPop = false;
+        this._historyPointer = 0;
         this._slugToName = this._buildSlugMap();
+        this._lastOp = "init";
 
         this._onChange = event => this._handleChange(event);
         this._onPopState = event => this._handlePopState(event);
@@ -70,14 +71,11 @@ export default class HistorySync {
     start() {
         if (this._started) return this;
 
-        // Restore BEFORE binding the change listener so the restore's
-        // own change event does not trigger a URL write. ScreenHost
-        // is already mounted and will re-render in response.
-        this._restoreOnStart();
+        this._historyPointer = 0;
+        this._pendingPop = false;
+        this._lastOp = "init";
 
-        // Attach proper state to the current entry regardless of whether
-        // restore ran. This is what makes refresh-on-deep-link use state
-        // (full fidelity) instead of URL parsing on subsequent loads.
+        this._restoreOnStart();
         this._writeState({ replace: true });
 
         this.navigator.on("change", this._onChange);
@@ -92,7 +90,9 @@ export default class HistorySync {
 
         this.navigator.off("change", this._onChange);
         window.removeEventListener("popstate", this._onPopState);
+
         this._started = false;
+        this._pendingPop = false;
 
         return this;
     }
@@ -124,12 +124,83 @@ export default class HistorySync {
     _handleChange(event) {
         if (this._suppress) return;
 
-        // Tab switch replaces so browser Back doesn't ping-pong between tabs.
+        if (event.action === "back") {
+            this._handleAppBack();
+            return;
+        }
+
+        if (event.action === "forward") {
+            this._handleAppForward();
+            return;
+        }
+
         const replace = event.action === "selectTab";
         this._writeState({ replace });
     }
 
+    _handleAppBack() {
+        // Defensive: if a previous history.back() never fired popstate,
+        // prefer replaceState over compounding broken state.
+        if (this._pendingPop) {
+            this._pendingPop = false;
+            this._writeState({ replace: true });
+            return;
+        }
+
+        if (this._historyPointer > 0) {
+            this._historyPointer -= 1;
+            this._pendingPop = true;
+            this._lastOp = "back";
+            history.back();
+        } else {
+            // No prior app entry (fresh deep-link paste, or start-of-session).
+            // Replacing keeps browser history honest at the cost of the
+            // pasted entry — the correct trade-off.
+            this._writeState({ replace: true });
+        }
+    }
+
+    _handleAppForward() {
+        if (this._pendingPop) {
+            // Previous forward() never received its popstate; treat the
+            // app as already in the target state.
+            this._pendingPop = false;
+            this._writeState({ replace: true });
+            return;
+        }
+
+        if (this._lastOp === "pop") {
+            this._pendingPop = true;
+            this._historyPointer += 1;
+            this._lastOp = "forward";
+            history.forward();
+        } else {
+            this._writeState({ replace: true });
+        }
+    }
+
     _handlePopState(event) {
+        // Only the skip branch updates _lastOp. Browser-initiated pops leave
+        // it intact, so a subsequent app-forward() will prefer replaceState
+        // over history.forward() — safe, at the cost of clobbering a real
+        // forward entry. Precise tracking would need a direction signal
+        // popstate doesn't expose.
+
+        if (this._pendingPop) {
+            // Consequence of our own history.back(). The app stack
+            // already matches what the browser just landed on.
+            this._pendingPop = false;
+            this._lastOp = "pop";
+            return;
+        }
+
+        // Browser-initiated pop — sync our pointer from the state
+        // the browser just revealed. Unknown states count as "bottom".
+        this._historyPointer =
+            typeof event.state?._pointer === "number"
+                ? event.state._pointer
+                : 0;
+
         this._suppress = true;
 
         try {
@@ -146,7 +217,6 @@ export default class HistorySync {
             }
 
             const parsed = this._parseLocation();
-
             if (parsed) {
                 this.navigator.restore(parsed.tabId, parsed.entries);
             }
@@ -158,8 +228,11 @@ export default class HistorySync {
     }
 
     _restoreOnStart() {
-        // Prefer history.state — full fidelity, survives reloads.
         if (history.state?.version === STATE_VERSION) {
+            if (typeof history.state._pointer === "number") {
+                this._historyPointer = history.state._pointer;
+            }
+
             try {
                 this.navigator.restore(
                     history.state.tabId,
@@ -174,7 +247,6 @@ export default class HistorySync {
             }
         }
 
-        // Fall back to URL parsing — paste, fresh tab, unknown state.
         const parsed = this._parseLocation();
 
         if (parsed) {
@@ -194,28 +266,20 @@ export default class HistorySync {
 
         if (this.mode === "hash") {
             route = location.hash.slice(1);
-
-            if (!route || !route.startsWith("/")) {
-                return null;
-            }
+            if (!route || !route.startsWith("/")) return null;
         } else {
             const path = location.pathname;
-
             if (this.basePath) {
-                if (!path.startsWith(this.basePath)) {
-                    return null;
-                }
+                if (!path.startsWith(this.basePath)) return null;
                 route = path.slice(this.basePath.length) || "/";
             } else {
                 route = path;
             }
-
             route += location.search;
         }
 
         const [pathPart, queryPart = ""] = route.split("?");
         const segments = pathPart.split("/").filter(Boolean);
-
         if (segments.length === 0) return null;
 
         const tabId = this._findTabBySlug(segments[0]);
@@ -228,14 +292,10 @@ export default class HistorySync {
 
         for (let i = 1; i < segments.length; i++) {
             const name = this._slugToName.get(segments[i]);
-
             if (!name) return null;
-
             entries.push({ name, params: {} });
         }
 
-        // Only the top-of-stack params are recoverable from the URL.
-        // Intermediate params are only preserved via history.state.
         const params = Object.fromEntries(new URLSearchParams(queryPart));
         entries[entries.length - 1].params = params;
 
@@ -251,7 +311,6 @@ export default class HistorySync {
 
     _writeState({ replace }) {
         const current = this.navigator.current;
-
         if (!current) return;
 
         const tabId = current.tabId ?? this.navigator.selectedTabId;
@@ -260,11 +319,17 @@ export default class HistorySync {
         const stack = this.navigator.stack;
         if (!Array.isArray(stack) || stack.length === 0) return;
 
+        if (!replace) {
+            this._historyPointer += 1;
+            this._lastOp = "push";
+        }
+
         const route = this._buildRoute(tabId, stack);
         const url = this._buildUrl(route);
 
         const state = {
             version: STATE_VERSION,
+            _pointer: this._historyPointer,
             tabId,
             stack: stack.map(entry => ({
                 name: entry.name,
@@ -296,7 +361,6 @@ export default class HistorySync {
         if (this.mode === "hash") {
             return `${location.pathname}${location.search}#${route}`;
         }
-
         return `${this.basePath}${route}`;
     }
 }

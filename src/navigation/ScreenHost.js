@@ -123,6 +123,10 @@ export default class ScreenHost {
         this.container.replaceChildren();
         this.container.classList.remove("screen-host");
 
+        // Don't leak navigation state onto a re-usable container.
+        delete this.container.dataset.canGoBack;
+        delete this.container.dataset.canGoForward;
+            
         this.container = null;
         this._currentElement = null;
         this._currentScrollKey = null;
@@ -217,6 +221,26 @@ export default class ScreenHost {
             }
         }
 
+        this._updateNavigationAttributes(container);
+
         return incoming;
     }
+
+_updateNavigationAttributes(container = this.container) {
+    if (!container) return;
+
+    const canGoBack =
+        typeof this.navigation.canGoBack === "function"
+            ? this.navigation.canGoBack()
+            : false;
+
+    const canGoForward =
+        typeof this.navigation.canGoForward === "function"
+            ? this.navigation.canGoForward()
+            : false;
+
+    container.dataset.canGoBack = String(canGoBack);
+    container.dataset.canGoForward = String(canGoForward);
+}
+    
 }
