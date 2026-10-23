@@ -1,3 +1,5 @@
+import DebugButton from "./debug/DebugButtons.js";
+
 import {
     Element,
     Text,
@@ -67,7 +69,19 @@ function renderLandingWorkspace() {
         ]
     );
 
-    renderer.render(view, workspace);
+    //renderer.render(view, workspace);
+
+// console debugging
+renderer.render(
+    Column({ gap: 16, padding: 20 }, [
+        Element(
+            { tagName: "button", onClick: renderExample },
+            ["renderExample"]
+        )
+    ]),
+    workspace
+);
+    
 }
 
 function renderExample() {
@@ -139,6 +153,7 @@ function renderExample() {
 
 function startApplication() {
     renderLandingWorkspace(); // 1.
+
     //renderExample(); // 2.
 
     //debugArea1();
@@ -212,4 +227,64 @@ function debugArea1() {
     };
 
     console.log(validateDefinition(invalidView));
+}
+
+
+
+
+
+
+const arrayTest = [
+    { id: "test", val: 1 },
+    { type: "idea", val: 2 }
+];
+
+const button = new DebugButton({
+    id: "log-array",
+    label: "Log Array",
+    run: () => {
+        console.log(arrayTest);
+    }
+});
+
+
+
+
+
+
+
+function showConsoleDiagnostics() {
+    document.getElementById("console-diagnostics")?.remove();
+
+    const lines = [
+        "CONSOLE CHILD DIAGNOSTICS",
+        `Root height: ${root?.getBoundingClientRect().height ?? "NOT FOUND"}px`,
+        `Root scrollHeight: ${root?.scrollHeight ?? "N/A"}`,
+        `Root clientHeight: ${root?.clientHeight ?? "N/A"}`,
+        ""
+    ];
+
+    const panel = document.createElement("pre");
+    panel.id = "console-diagnostics";
+    Object.assign(panel.style, {
+        position: "fixed",
+        top: "8px",
+        left: "8px",
+        right: "8px",
+        zIndex: "2147483647",
+        padding: "12px",
+        margin: "0",
+        background: "#fff",
+        color: "#111",
+        border: "2px solid #e44",
+        font: "12px/1.5 monospace",
+        whiteSpace: "pre-wrap",
+        overflowWrap: "anywhere",
+        maxHeight: "65vh",
+        overflowY: "auto"
+    });
+
+    panel.textContent = lines.join("\n") + "\nTap to close.";
+    panel.addEventListener("click", () => panel.remove());
+    document.body.appendChild(panel);
 }

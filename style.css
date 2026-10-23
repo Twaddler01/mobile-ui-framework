@@ -443,6 +443,7 @@ button {
 
 /* Avoid unexpected shrinking of nested layout content. */
 
-.ui-layout > * {
+.ui-column > *,
+.ui-row > * {
     min-width: 0;
 }

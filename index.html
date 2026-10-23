@@ -15,12 +15,12 @@
         <title>Mobile UI Framework</title>
 
         <link rel="stylesheet" href="./style.css" />
-        <link rel="stylesheet" href="../mobile-dev-console/console.css" />
     </head>
 
     <body>
         <div id="productionErrorLog"></div>
-        <div id="consoleLog"></div>
+
+        <div id="devtools"></div>
 
         <div id="app">
             <header id="app-header">
@@ -68,26 +68,73 @@
         <!-- Initialize the console before integrations and the application. -->
         <script type="module">
             try {
-                const { default: Console } = await import("../mobile-dev-console/Console.js");
+                const { default: DevTools } =
+                    await import("../mobile-dev-console/DevTools.js");
 
-                new Console({
+                const { DebugButtons } =
+                    await import("./debug/DebugButtons.js");
+
+                /*
+                const devTools = DevTools.mount({
+                    mode: "overlay",
+                    captureConsole: true,
+                    mirrorToNative: false,
+                    showCopyButtons: false,
+                    allowDragOutsideBounds: true
+                });
+                */
+
+                const devTools = DevTools.mount({
+                    
+                    mode: "embedded",
+                    mountPoint: "#devtools", // set above
+                    height: "60dvh",
                     captureConsole: true,
                     mirrorToNative: false,
                     showCopyButtons: false,
                     allowDragOutsideBounds: true
                 });
 
-                // Register example tools after the public console API exists.
-                // 
+                DebugButtons.connect(devTools);
 
-                // Load the app only after console integrations are ready.
-                // Replace TestEnvironment.js with your application entry point as needed.
+                /*devTools.registerSuite({
+                    id: "app-debug",
+                    name: "App Debug Tools",
+
+                    actions: [
+                        {
+                            id: "hello",
+                            label: "Test Button",
+
+                            run({ console }) {
+                                console.log("Button clicked!");
+                            }
+                        },
+                        {
+                            id: "log test",
+                            label: "LOG",
+
+                            run() {
+                                console.log(arrayTest);
+                            }
+                        }
+                        
+                    ]
+                });*/
+
+                // Optional: make the instance available to app code.
+                // window.ksimDevTools = devTools;
+
                 await import("./main.js");
             } catch (error) {
-                if (window.devConsole) {
+                if (window.ksimDevTools?.devConsole) {
+                    window.ksimDevTools.devConsole.error(error);
+                } else if (window.devConsole) {
                     window.devConsole.error(error);
-                } else {
+                } else if (window.showFatalError) {
                     window.showFatalError("Application Startup Failed", error);
+                } else {
+                    console.error(error);
                 }
             }
         </script>
